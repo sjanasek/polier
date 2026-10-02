@@ -1,10 +1,11 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { useStore, useProjekt } from '../store';
 import { Card, NumberInput, KPI, confirmDelete } from '../components/ui';
 import { POSITIONSARTEN, type Position, type PositionsArt, type Titel } from '../types';
 import { neuePosition, neuerTitel } from '../lib/defaults';
 import { eur, num2, numFlex } from '../lib/format';
 import { effektiverEP, kalkulation, lvSummen, zaehltInSumme } from '../lib/calc';
+import { gaebDateiname, gaebExport, gaebImport, gaebZuProjekt, type GaebPhase } from '../lib/gaeb';
 
 function naechsteOZ(titel: Titel): string {
   const nums = titel.positionen.map(p => parseInt(p.oz.split('.').pop() || '0', 10)).filter(n => !isNaN(n));
@@ -15,9 +16,39 @@ function naechsteOZ(titel: Titel): string {
 export function LVView() {
   const { projekt, update } = useProjekt();
   const einheiten = useStore(s => s.stammdaten.einheiten);
+  const firma = useStore(s => s.stammdaten.firma);
+  const addProjekt = useStore(s => s.addProjekt);
   const setView = useStore(s => s.setView);
   const [sel, setSel] = useState<string | null>(null);
+  const [gaebMeldung, setGaebMeldung] = useState<string>('');
+  const fileRef = useRef<HTMLInputElement>(null);
   if (!projekt) return null;
+
+  const gaebExportieren = (phase: GaebPhase) => {
+    const xml = gaebExport(projekt, firma, kalkulation(projekt), phase);
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = gaebDateiname(projekt, phase);
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  const gaebImportieren = async (f: File) => {
+    try {
+      const imp = gaebImport(await f.text());
+      const info = `${imp.lv.length} Titel, ${imp.positionen} Positionen${imp.mitPreisen ? ' mit Preisen' : ''} (GAEB X${imp.phase})`;
+      const alsNeu = window.confirm(`${f.name}: ${info}.\n\nOK = als neues Projekt anlegen\nAbbrechen = LV des aktuellen Projekts ersetzen`);
+      if (alsNeu) {
+        addProjekt(gaebZuProjekt(projekt, imp));
+      } else if (window.confirm(`LV von „${projekt.bezeichnung}“ wirklich ersetzen? Vorhandene Positionen (und zugehörige Aufmaße) gehen verloren.`)) {
+        update(p => ({ ...p, lv: imp.lv, aufmass: [], stationierungen: [], vorbemerkungen: imp.vorbemerkungen || p.vorbemerkungen }));
+      }
+      setGaebMeldung(`Importiert: ${info}`);
+    } catch (e) {
+      setGaebMeldung('Import fehlgeschlagen: ' + (e as Error).message);
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  };
 
   const erg = kalkulation(projekt);
   const summen = lvSummen(projekt, erg);
@@ -101,6 +132,14 @@ export function LVView() {
             </table>
           </div>
           {summen.eventual > 0 && <p className="muted" style={{ marginTop: 8 }}>Nachrichtlich: Bedarfspositionen {eur(summen.eventual)}</p>}
+          <div className="row" style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+            <b>GAEB DA XML</b>
+            <button className="btn secondary sm" onClick={() => gaebExportieren('83')} title="Leistungsverzeichnis ohne Preise (Ausschreibung)">Export X83 (Ausschreibung)</button>
+            <button className="btn secondary sm" onClick={() => gaebExportieren('84')} title="Angebot mit Einheits- und Gesamtpreisen">Export X84 (Angebot)</button>
+            <button className="btn secondary sm" onClick={() => fileRef.current?.click()}>Import (X81–X86)</button>
+            <input ref={fileRef} type="file" accept=".x81,.x82,.x83,.x84,.x85,.x86,.xml,.X81,.X82,.X83,.X84,.X85,.X86" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && gaebImportieren(e.target.files[0])} />
+            {gaebMeldung && <span className={gaebMeldung.startsWith('Import fehl') ? 'err' : 'muted'}>{gaebMeldung}</span>}
+          </div>
         </Card>
         {selected && (
           <Card title={`Position ${selected.p.oz}`} actions={<button className="btn ghost sm" onClick={() => setSel(null)}>Schließen</button>}>

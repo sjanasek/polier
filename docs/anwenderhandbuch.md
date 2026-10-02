@@ -121,6 +121,20 @@ Beide Arten können im selben LV gemischt werden.
 
 Oben werden Angebotssumme netto, Nachlass, MwSt. und Brutto laufend angezeigt. Bedarfs- und Alternativpositionen werden grau dargestellt und unterhalb der Tabelle nachrichtlich summiert.
 
+### GAEB-Schnittstelle
+
+Unterhalb der LV-Tabelle befindet sich die Leiste **GAEB DA XML** (Format GAEB DA XML 3.2):
+
+| Funktion | Inhalt |
+|---|---|
+| Export X83 (Ausschreibung) | LV mit Titeln, Positionen, Kurz- und Langtext, Menge, Einheit, Positionsart, ohne Preise. Zur Weitergabe an Bieter oder an ein AVA-Programm |
+| Export X84 (Angebot) | Wie X83, zusätzlich Einheitspreise, Gesamtpreise, Titelsummen, Nachlass, MwSt. und Bieteradresse aus den Stammdaten. Zur elektronischen Angebotsabgabe |
+| Import (X81–X86) | Liest eine GAEB-Datei ein. Nach Auswahl der Datei kann gewählt werden, ob ein **neues Projekt** angelegt oder das **LV des aktuellen Projekts ersetzt** wird |
+
+Beim Import werden übernommen: Projektname und -bezeichnung, Auftraggeberadresse, Vorbemerkungen, Titel (auch mehrstufig, die Ebenen werden zu einem Titel mit zusammengesetzter OZ zusammengefasst), Positionen mit Kurz-/Langtext, Menge, Einheit, Positionsart (Bedarf, Alternativ, Zulage, Hinweistext) und, falls vorhanden, Einheitspreise. Importierte Preise werden als manuelle EP gesetzt; die Kalkulation kann anschließend je Position aktiviert werden.
+
+Die Dateiendung entspricht der Phase (`.X83`, `.X84`). Die Dateien können in jedem GAEB-fähigen Programm (AVA-Software, Vergabeplattformen) geöffnet werden.
+
 ---
 
 ## 4. Baukalkulation
@@ -423,4 +437,4 @@ Das Aufmaßdatum liegt nach dem Stichtag der Rechnung, oder die Rechnung ist fes
 Über Export und Import der Sicherungsdatei. Eine gemeinsame Datenbank ist in der aktuellen Version nicht enthalten.
 
 **Kann ich das LV als GAEB-Datei ausgeben?**
-Noch nicht. Die Daten liegen strukturiert vor, eine GAEB-Schnittstelle (X83/X84/X86) ist als Erweiterung vorgesehen.
+Ja, im Modul Leistungsverzeichnis unten (siehe Abschnitt 3, „GAEB-Schnittstelle“).

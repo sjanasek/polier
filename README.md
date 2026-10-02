@@ -25,6 +25,7 @@ npm run build        # Produktions-Build nach dist/
 | Stationierung | Stationen in km+m, Mittelwertverfahren (Gauß-Elling) für Länge, Fläche, Volumen |
 | Rechnungen | Kumulative Abschlags-/Teilschluss-/Schlussrechnung nach § 16 VOB/B, Sicherheitseinbehalt, § 13b, Festschreibung, Zahlungseingänge |
 | Drucken | LV ohne Preise, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt als PDF über den Browser |
+| GAEB | Export als GAEB DA XML 3.2 X83 (Ausschreibung) und X84 (Angebot), Import von X81–X86 ins LV |
 
 ## Dokumentation
 

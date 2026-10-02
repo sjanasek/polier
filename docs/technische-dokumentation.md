@@ -40,10 +40,11 @@ polier/
     │   ├── calc.ts             Rechenkern: Kalkulation, LV-Summen, Aufmaß, Rechnungen
     │   ├── formulas.ts         REB-Formelkatalog + Parser für freie Formeln
     │   ├── station.ts          Stationierung (Mittelwertverfahren)
+│   ├── gaeb.ts             GAEB DA XML 3.2 Export (X83/X84) und Import (X81–X86)
     │   ├── format.ts           Zahlen-/Datums-/Stationsformatierung, uid()
     │   ├── defaults.ts         Fabriken für neue Objekte, Standardparameter
     │   ├── demo.ts             Beispielprojekt
-    │   └── __tests__/calc.test.ts
+    │   └── __tests__/          calc.test.ts, gaeb.test.ts (jsdom)
     └── views/
         ├── ProjekteView.tsx
         ├── LVView.tsx
@@ -207,6 +208,29 @@ Der Abzug der Vorrechnungen erfolgt mit deren **Rechnungsbeträgen**, nicht mit 
 
 `stationierungSumme(s)` = Σ Abschnitte × faktor × Vorzeichen. Stationen werden als Meter gespeichert; `stationFmt`/`stationParse` wandeln von/nach `km+m` (z. B. `0+125,50`).
 
+## 7a. GAEB-Schnittstelle (`src/lib/gaeb.ts`)
+
+Format: GAEB DA XML 3.2 (Namespace `http://www.gaeb.de/GAEB_DA_XML/DA{83|84}/3.2`).
+
+**Export** `gaebExport(projekt, firma, erg, phase)` erzeugt den XML-String per String-Konkatenation (kein Serializer nötig, Werte werden escaped). Mapping:
+
+| Polier | GAEB |
+|---|---|
+| Titel | `BoQCtgy RNoPart` + `LblTx` |
+| Titel-Vorbemerkung | `Remark` im `BoQBody` des Titels |
+| Position | `Item RNoPart` mit `Qty`, `QU`, `Description/CompleteText` (`OutlineText` = Kurztext, `DetailTxt` = Langtext) |
+| Art B (Bedarf) | `Provis = WithoutTotal` |
+| Art A (Alternativ) | `ALNGroupNo`/`ALNSerNo` |
+| Art Z (Zulage) | `MarkupItem = Yes` |
+| Art H (Hinweis) | `Remark` in der `Itemlist` |
+| EP / GP (nur X84) | `UP` / `IT`, Titelsummen `Totals/Total`, Gesamt `BoQ/Totals` mit `DiscountPcnt`, `VAT`, `TotalGross` |
+| Auftraggeber / Firma | `OWN/Address`, `BIDDER/Address` (X84) |
+| Vorbemerkungen | `AwardInfo/AwardText` |
+
+**Import** `gaebImport(xmlText)` parst mit `DOMParser` namespace-unabhängig über `localName` und akzeptiert daher alle Phasen (X81–X86) und Versionen 3.1–3.3, soweit die Elementnamen übereinstimmen. `BoQCtgy` wird rekursiv durchlaufen; verschachtelte Ebenen werden zu einem flachen `Titel` mit zusammengesetzter OZ (`1.01`) und Bezeichnung (`Los 1 / Erdarbeiten`) reduziert, da das Datenmodell nur eine Titelebene kennt. `gaebZuProjekt(basis, importErgebnis)` erzeugt daraus ein neues Projekt.
+
+Nicht abgebildet: Textergänzungen (`ComplTS`), Bieterfeld-Kennungen, Unterbeschreibungen, Ausführungsbeschreibungen, Preisanteile (`UPComp`), Stundenlohnarbeiten und Nachtragsnummern.
+
 ## 8. Persistenz und Datenformat
 
 ### Store (`src/store.ts`)
@@ -239,13 +263,13 @@ Das vollständige Schema steht in `docs/openapi.yaml` (OpenAPI 3.1, `components.
 
 ## 10. Tests
 
-`src/lib/__tests__/calc.test.ts` prüft Formeln, Parser, Stationierung, Mittellohn, beide Kalkulationsmethoden inkl. Zielsummen-Modus, Mengen bis Stichtag, kumulative Verrechnung (AR 2 zieht AR 1 ab) und Snapshot-Verhalten. Ausführen mit `npm test`.
+`src/lib/__tests__/gaeb.test.ts` (jsdom-Umgebung) prüft Export-Struktur, Wohlgeformtheit, Roundtrip Export → Import und verschachtelte Titel. `src/lib/__tests__/calc.test.ts` prüft Formeln, Parser, Stationierung, Mittellohn, beide Kalkulationsmethoden inkl. Zielsummen-Modus, Mengen bis Stichtag, kumulative Verrechnung (AR 2 zieht AR 1 ab) und Snapshot-Verhalten. Ausführen mit `npm test`.
 
 ## 11. Erweiterungsideen
 
 | Thema | Ansatz |
 |---|---|
-| GAEB-Schnittstelle (X83/X84/X86) | Export/Import als XML aus `Titel[]`/`Position[]`; Mapping von Positionsarten auf GAEB-Kennzeichen |
+| GAEB-Erweiterungen | Textergänzungen, Preisanteile (`UPComp`), X86-Auftragsexport mit Auftragsnummer, Validierung gegen das GAEB-XSD |
 | Mehrbenutzer / Server | REST-API nach `docs/openapi.yaml`, Store-Persist durch API-Client ersetzen |
 | Nachträge | Eigene Titel-Kennzeichnung "Nachtrag Nr." und getrennte Ausweisung in Rechnungen |
 | Mehrere Aufmaß-Schemata | Weiteren Katalog in `formulas.ts` (z. B. REB 23.004) |
