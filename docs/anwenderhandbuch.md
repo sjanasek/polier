@@ -133,7 +133,7 @@ Unterhalb der LV-Tabelle befindet sich die Leiste **GAEB DA XML** (Format GAEB D
 
 Beim Import werden übernommen: Projektname und -bezeichnung, Auftraggeberadresse, Vorbemerkungen, Titel (auch mehrstufig, die Ebenen werden zu einem Titel mit zusammengesetzter OZ zusammengefasst), Positionen mit Kurz-/Langtext, Menge, Einheit, Positionsart (Bedarf, Alternativ, Zulage, Hinweistext) und, falls vorhanden, Einheitspreise. Importierte Preise werden als manuelle EP gesetzt; die Kalkulation kann anschließend je Position aktiviert werden.
 
-Die Dateiendung entspricht der Phase (`.X83`, `.X84`). Die Dateien können in jedem GAEB-fähigen Programm (AVA-Software, Vergabeplattformen) geöffnet werden.
+Die Dateiendung entspricht der Phase (`.X83`, `.X84`). Das Auswahlfeld filtert bewusst nicht nach Dateiendung, damit auch Geräte wie das iPad, die diese Endungen nicht kennen, die Datei anbieten. Wird eine Datei gewählt, die kein GAEB-XML ist, erscheint eine Fehlermeldung. Die Dateien können in jedem GAEB-fähigen Programm (AVA-Software, Vergabeplattformen) geöffnet werden.
 
 ---
 

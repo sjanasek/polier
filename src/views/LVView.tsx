@@ -137,7 +137,7 @@ export function LVView() {
             <button className="btn secondary sm" onClick={() => gaebExportieren('83')} title="Leistungsverzeichnis ohne Preise (Ausschreibung)">Export X83 (Ausschreibung)</button>
             <button className="btn secondary sm" onClick={() => gaebExportieren('84')} title="Angebot mit Einheits- und Gesamtpreisen">Export X84 (Angebot)</button>
             <button className="btn secondary sm" onClick={() => fileRef.current?.click()}>Import (X81–X86)</button>
-            <input ref={fileRef} type="file" accept=".x81,.x82,.x83,.x84,.x85,.x86,.xml,.X81,.X82,.X83,.X84,.X85,.X86" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && gaebImportieren(e.target.files[0])} />
+            <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && gaebImportieren(e.target.files[0])} />
             {gaebMeldung && <span className={gaebMeldung.startsWith('Import fehl') ? 'err' : 'muted'}>{gaebMeldung}</span>}
           </div>
         </Card>
