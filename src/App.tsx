@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore, useProjekt, type View } from './store';
 import { applyTheme, loadTheme, saveTheme, type ThemeMode } from './lib/theme';
 import { ProjekteView } from './views/ProjekteView';
+import { KundenView } from './views/KundenView';
 import { LVView } from './views/LVView';
 import { KalkulationView } from './views/KalkulationView';
 import { AufmassView } from './views/AufmassView';
@@ -13,6 +14,7 @@ import { PROJEKT_ARTEN } from './types';
 
 const NAV: { view: View; label: string; ico: string; needsProjekt?: boolean }[] = [
   { view: 'projekte', label: 'Projekte', ico: '▦' },
+  { view: 'kunden', label: 'Adressen / Kunden', ico: '☎' },
   { view: 'lv', label: 'Leistungsverzeichnis', ico: '≡', needsProjekt: true },
   { view: 'kalkulation', label: 'Kalkulation', ico: '∑', needsProjekt: true },
   { view: 'aufmass', label: 'Aufmaß', ico: '∠', needsProjekt: true },
@@ -23,6 +25,7 @@ const NAV: { view: View; label: string; ico: string; needsProjekt?: boolean }[] 
 
 const TITEL: Record<View, string> = {
   projekte: 'Projekte',
+  kunden: 'Adressverwaltung',
   lv: 'Leistungsverzeichnis',
   kalkulation: 'Baukalkulation',
   aufmass: 'Aufmaß nach VOB/C (REB-Formeln)',
@@ -49,6 +52,7 @@ export default function App() {
 
   const renderBody = () => {
     if (view === 'projekte') return <ProjekteView />;
+    if (view === 'kunden') return <KundenView />;
     if (view === 'stammdaten') return <StammdatenView />;
     if (!projekt) return <div className="empty">Bitte zuerst ein Projekt anlegen oder auswählen.</div>;
     switch (view) {

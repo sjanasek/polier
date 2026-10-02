@@ -126,6 +126,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RechnungsErgebnis'
+  /kunden:
+    get:
+      summary: Adressbuch lesen
+      responses:
+        '200':
+          description: Kunden
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kunde'
+    post:
+      summary: Kunden anlegen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Kunde'
+      responses:
+        '201':
+          description: Angelegt
+  /kunden/{id}/projekte:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Projekte eines Kunden
+      responses:
+        '200':
+          description: Projekte
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Projekt'
   /stammdaten:
     get:
       summary: Stammdaten lesen
@@ -184,11 +225,27 @@ components:
             ustId: { type: string }
             steuerNr: { type: string }
 
+    Kunde:
+      allOf:
+        - $ref: '#/components/schemas/Adresse'
+        - type: object
+          required: [id, kundenNr]
+          properties:
+            id: { type: string }
+            kundenNr: { type: string, example: 'K-0001' }
+            ansprechpartner: { type: string }
+            ustId: { type: string }
+            notiz: { type: string }
+
     Stammdaten:
       type: object
       required: [firma, geraete, material, einheiten]
       properties:
         firma: { $ref: '#/components/schemas/Firma' }
+        kunden:
+          type: array
+          description: Adressbuch (fehlt in Sicherungen älterer Versionen)
+          items: { $ref: '#/components/schemas/Kunde' }
         geraete:
           type: array
           items:
@@ -396,6 +453,7 @@ components:
       required: [id, nummer, bezeichnung, art, bauvorhaben, bauort, datum, auftraggeber, mwstProzent, nachlassProzent, skontoProzent, skontoTage, sicherheitseinbehaltProzent, zahlungszielTage, vorbemerkungen, lv, kalk, aufmass, stationierungen, rechnungen, angelegt]
       properties:
         id: { type: string }
+        kundeId: { type: [string, 'null'], description: 'Verknüpfung zum Adressbuch; auftraggeber ist eine Kopie' }
         nummer: { type: string }
         bezeichnung: { type: string }
         art: { type: string, enum: [angebot, ausschreibung, auftrag] }

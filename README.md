@@ -18,6 +18,7 @@ npm run build        # Produktions-Build nach dist/
 
 | Modul | Inhalt |
 |---|---|
+| Adressen / Kunden | Adressverwaltung mit Kundennummern; Projekte werden kundenbezogen abgelegt, Filter und Projektübersicht je Kunde |
 | Projekte | Angebot, Ausschreibung oder Auftrag; Auftraggeber, MwSt., Nachlass, Skonto, Sicherheitseinbehalt |
 | Leistungsverzeichnis | Titel, Positionen (Normal-, Bedarfs-, Alternativ-, Zulage-, Hinweisposition), Lang-/Kurztext, EP manuell oder aus Kalkulation |
 | Kalkulation | Mittellohn, Einzelkosten je Position (Lohn, Stoffe, Geräte, Fremdleistung, Sonstiges), detaillierte Zuschläge (BGK/AGK/W&G je Kostenart), Endsummenkalkulation mit Umlage und vorgebbarer Angebotsendsumme |

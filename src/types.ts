@@ -231,6 +231,8 @@ export const PROJEKT_ARTEN: Record<ProjektArt, string> = {
 
 export interface Projekt {
   id: ID;
+  /** Verknüpfung zum Adressbuch (optional). Die Adresse unter auftraggeber ist eine Kopie. */
+  kundeId?: ID | null;
   nummer: string;
   bezeichnung: string;
   art: ProjektArt;
@@ -262,6 +264,15 @@ export interface Firma extends Adresse {
   steuerNr: string;
 }
 
+/** Kunde / Auftraggeber im Adressbuch */
+export interface Kunde extends Adresse {
+  id: ID;
+  kundenNr: string;
+  ansprechpartner: string;
+  ustId: string;
+  notiz: string;
+}
+
 export interface GeraetStamm {
   id: ID;
   bezeichnung: string;
@@ -277,6 +288,7 @@ export interface MaterialStamm {
 
 export interface Stammdaten {
   firma: Firma;
+  kunden: Kunde[];
   geraete: GeraetStamm[];
   material: MaterialStamm[];
   einheiten: string[];

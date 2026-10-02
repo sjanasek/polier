@@ -9,7 +9,7 @@ Das Programm läuft komplett im Browser. Alle Daten werden lokal auf dem Rechner
 ## Inhalt
 
 1. [Erste Schritte](#1-erste-schritte)
-2. [Projekte](#2-projekte)
+2. [Projekte](#2-projekte) und [Adressverwaltung](#adressverwaltung-kunden)
 3. [Leistungsverzeichnis (LV)](#3-leistungsverzeichnis-lv)
 4. [Baukalkulation](#4-baukalkulation)
 5. [Aufmaß nach VOB/C](#5-aufmaß-nach-vobc)
@@ -44,7 +44,8 @@ Links befindet sich die **Navigation** mit allen Modulen. Unten links wird das *
 
 | Modul | Zweck |
 |---|---|
-| Projekte | Projekte anlegen, auswählen, Auftraggeber und Konditionen pflegen |
+| Projekte | Projekte anlegen, auswählen, Kunde zuordnen, Konditionen pflegen |
+| Adressen / Kunden | Adressverwaltung mit Kundennummern und allen Projekten je Kunde |
 | Leistungsverzeichnis | Titel und Positionen mit Mengen, Einheiten und Preisen |
 | Kalkulation | Einzelkosten, Mittellohn, Zuschläge, Angebotsendsumme |
 | Aufmaß | Aufmaßblätter mit REB-Formeln |
@@ -78,6 +79,20 @@ Beim ersten Start ist das Beispielprojekt "Erschließung Am Lindenhof" geladen. 
 | Auftrag / Abrechnung | Beauftragtes Projekt mit Aufmaß und Rechnungen |
 
 Die Verwendung steuert nur die Voreinstellung beim Drucken. Alle Module stehen in jedem Projekt zur Verfügung.
+
+### Adressverwaltung (Kunden)
+
+Unter **Adressen / Kunden** liegt das Adressbuch. Jeder Kunde hat Kundennummer (automatisch `K-0001`, `K-0002` …), Name, Anschrift, Ansprechpartner, Telefon, E-Mail, USt-IdNr. und Notiz. Die Suche findet Treffer in Name, Ort, PLZ, Nummer, Ansprechpartner und E-Mail.
+
+**Projekte kundenbezogen ablegen:**
+
+- Im Projekt unter „Auftraggeber“ den Kunden aus dem Adressbuch wählen. Die Adresse wird ins Projekt übernommen und erscheint auf LV, Angebot und Rechnung.
+- In der Kundenansicht zeigt „Projekte dieses Kunden“ alle zugeordneten Projekte mit Summe und Anzahl Rechnungen. **Öffnen** springt ins Projekt, **+ Neues Projekt** legt ein Projekt mit der Adresse des Kunden an.
+- Die Projektliste lässt sich oben nach Kunde filtern („Ohne Kundenzuordnung“ zeigt Projekte ohne Zuordnung).
+- Hat ein Projekt eine Adresse ohne Kundenzuordnung, speichert **Als Kunde speichern** sie im Adressbuch.
+- **Kunden aus Projekten übernehmen** legt aus den Adressen bereits vorhandener Projekte automatisch Kunden an (ohne Duplikate) und ordnet die Projekte zu. Praktisch nach dem Update auf diese Version.
+
+**Wichtig:** Die Adresse im Projekt ist eine Kopie. Ändert sich die Anschrift eines Kunden, bleiben bestehende Projekte und bereits gestellte Rechnungen unverändert. Soll ein Projekt die neue Anschrift erhalten, im Projekt **Adresse aus Adressbuch aktualisieren** wählen. Wird ein Kunde gelöscht, bleiben seine Projekte samt Adresse erhalten und verlieren nur die Zuordnung. Das Adressbuch ist Teil der Datensicherung.
 
 ### Kaufmännische Bedingungen
 

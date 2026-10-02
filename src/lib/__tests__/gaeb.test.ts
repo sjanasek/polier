@@ -62,6 +62,12 @@ describe('GAEB DA XML', () => {
     const q = gaebZuProjekt(p, imp);
     expect(lvSummen(q, null).netto).toBeCloseTo(sOrig, 2);
     expect(q.art).toBe('angebot');
+    // neues Projekt ist frisch: keine Aufmaße/Rechnungen/Kundenzuordnung aus dem Ausgangsprojekt
+    expect(q.aufmass).toHaveLength(0);
+    expect(q.stationierungen).toHaveLength(0);
+    expect(q.rechnungen).toHaveLength(0);
+    expect(q.kundeId).toBeNull();
+    expect(q.id).not.toBe(p.id);
   });
 
   it('Import mit verschachtelten Titeln und Sonderzeichen', () => {

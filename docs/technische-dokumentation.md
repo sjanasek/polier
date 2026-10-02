@@ -41,6 +41,7 @@ polier/
     │   ├── formulas.ts         REB-Formelkatalog + Parser für freie Formeln
     │   ├── station.ts          Stationierung (Mittelwertverfahren)
 │   ├── theme.ts            Hell-/Dunkelmodus (hell, dunkel, auto)
+│   ├── kunden.ts           Adressbuch-Logik (Kundennummern, Adresskopie, Kunden aus Projekten)
 │   ├── gaeb.ts             GAEB DA XML 3.2 Export (X83/X84) und Import (X81–X86)
     │   ├── format.ts           Zahlen-/Datums-/Stationsformatierung, uid()
     │   ├── defaults.ts         Fabriken für neue Objekte, Standardparameter
@@ -48,6 +49,7 @@ polier/
     │   └── __tests__/          calc.test.ts, gaeb.test.ts (jsdom)
     └── views/
         ├── ProjekteView.tsx
+        ├── KundenView.tsx
         ├── LVView.tsx
         ├── KalkulationView.tsx
         ├── AufmassView.tsx
@@ -75,6 +77,7 @@ Node 18 oder neuer wird vorausgesetzt.
 
 ```
 Projekt
+├── kundeId?: Verknüpfung zum Adressbuch (optional, null = keine Zuordnung)
 ├── Stammfelder: nummer, bezeichnung, art (angebot|ausschreibung|auftrag), bauvorhaben, bauort, datum
 ├── auftraggeber: Adresse
 ├── Konditionen: mwstProzent, nachlassProzent, skontoProzent, skontoTage,
@@ -103,11 +106,14 @@ Projekt
           reverseCharge, sonstigeAbzuege[], zahlungen[], snapshot | null, bemerkung }
 
 Stammdaten
+├── kunden: Kunde[] { kundenNr, ansprechpartner, ustId, notiz + Adresse }
 ├── firma: Firma (Adresse + inhaber, bank, iban, bic, ustId, steuerNr)
 ├── geraete: GeraetStamm[] { bezeichnung, stundensatz }
 ├── material: MaterialStamm[] { bezeichnung, einheit, preis }
 └── einheiten: string[]
 ```
+
+**Adressbuch:** `Projekt.auftraggeber` bleibt eine Adresskopie, `kundeId` ist nur die Verknüpfung. Dadurch ändern spätere Adressänderungen keine bestehenden Projekte oder gestellten Rechnungen; die Übernahme erfolgt bewusst per Schaltfläche. `kundenAusProjekten` dedupliziert nach Name (ohne Groß-/Kleinschreibung) und PLZ.
 
 Alle Objekte tragen eine `id` (zufälliger String aus `uid()`). Referenzen zwischen Objekten laufen ausschließlich über `positionId`. Datumswerte sind ISO-Strings `yyyy-mm-dd`, sodass String-Vergleiche für Stichtage genügen.
 
@@ -245,7 +251,7 @@ Nicht abgebildet: Textergänzungen (`ComplTS`), Bieterfeld-Kennungen, Unterbesch
 
 Änderungen laufen über `updateProjekt(id, p => ({...p, …}))`; der Store erzeugt neue Objekte, React rendert differenziert. `useProjekt()` liefert das aktive Projekt und einen gebundenen Updater.
 
-Die Persistenz nutzt `zustand/middleware/persist` mit `partialize`; beim ersten Start wird das Beispielprojekt geladen. Eine Versionierung des Speicherformats ist über den Schlüssel `polier-v1` vorbereitet; Migrationen können über die `migrate`-Option von `persist` ergänzt werden.
+Die Persistenz nutzt `zustand/middleware/persist` mit `partialize` und einer eigenen `merge`-Funktion, die in älteren Speicherständen das fehlende Feld `stammdaten.kunden` mit einer leeren Liste ergänzt; beim ersten Start wird das Beispielprojekt geladen. Eine Versionierung des Speicherformats ist über den Schlüssel `polier-v1` vorbereitet; Migrationen können über die `migrate`-Option von `persist` ergänzt werden.
 
 ### Sicherungsdatei
 

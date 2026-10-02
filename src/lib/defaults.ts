@@ -59,6 +59,7 @@ export const neueRechnung = (p: Projekt, lfdNr: number): Rechnung => ({
 
 export const neuesProjekt = (nummer: string): Projekt => ({
   id: uid(),
+  kundeId: null,
   nummer,
   bezeichnung: 'Neues Projekt',
   art: 'angebot',
@@ -83,6 +84,7 @@ export const neuesProjekt = (nummer: string): Projekt => ({
 
 export const standardStammdaten = (): Stammdaten => ({
   firma: leereFirma(),
+  kunden: [],
   geraete: [
     { id: uid(), bezeichnung: 'Bagger 14 t (inkl. Betriebsstoffe)', stundensatz: 48 },
     { id: uid(), bezeichnung: 'Radlader 8 t', stundensatz: 38 },

@@ -5,7 +5,7 @@
 // Import ignoriert, beim Export nicht erzeugt.
 // ---------------------------------------------------------------------------
 import type { Adresse, Firma, Projekt, Titel } from '../types';
-import { neuePosition, neuerTitel } from './defaults';
+import { neuePosition, neuerTitel, neuesProjekt } from './defaults';
 import { effektiverEP, lvSummen, type KalkErgebnis } from './calc';
 import { uid } from './format';
 
@@ -255,14 +255,20 @@ export function gaebImport(xmlText: string): GaebImportErgebnis {
 
 /** Importergebnis in ein neues Projekt-Objekt überführen */
 export function gaebZuProjekt(basis: Projekt, imp: GaebImportErgebnis): Projekt {
+  // Frisches Projekt; nur kaufmännische Voreinstellungen werden aus dem aktuellen Projekt übernommen.
+  const neu = neuesProjekt(imp.projektName || basis.nummer);
   return {
-    ...basis,
-    id: uid(),
-    nummer: imp.projektName || basis.nummer,
+    ...neu,
     bezeichnung: imp.projektBezeichnung || imp.projektName || 'GAEB-Import',
     bauvorhaben: imp.projektBezeichnung,
     art: imp.phase === '84' || imp.phase === '86' ? 'angebot' : 'ausschreibung',
-    auftraggeber: { ...basis.auftraggeber, ...imp.auftraggeber },
+    auftraggeber: { ...neu.auftraggeber, ...imp.auftraggeber },
+    mwstProzent: basis.mwstProzent,
+    skontoProzent: basis.skontoProzent,
+    skontoTage: basis.skontoTage,
+    sicherheitseinbehaltProzent: basis.sicherheitseinbehaltProzent,
+    zahlungszielTage: basis.zahlungszielTage,
+    kalk: basis.kalk,
     vorbemerkungen: imp.vorbemerkungen,
     lv: imp.lv,
   };

@@ -1,6 +1,16 @@
 import type { Projekt } from '../types';
 import { neuesProjekt } from './defaults';
 import { uid } from './format';
+import type { Kunde } from '../types';
+import { kundeAdresse } from './kunden';
+
+export const DEMO_KUNDE_ID = 'kunde-demo-stadt';
+
+/** Beispielkunden für das Adressbuch */
+export const demoKunden = (): Kunde[] => [
+  { id: DEMO_KUNDE_ID, kundenNr: 'K-0001', name: 'Stadt Musterstadt', zusatz: 'Tiefbauamt', strasse: 'Rathausplatz 1', plz: '12345', ort: 'Musterstadt', telefon: '01234 5678-0', email: 'tiefbau@musterstadt.de', ansprechpartner: 'Frau Beispiel', ustId: '', notiz: 'Öffentlicher Auftraggeber, Zahlungsziel 30 Tage' },
+  { id: 'kunde-demo-wohnbau', kundenNr: 'K-0002', name: 'Lindenhof Wohnbau GmbH', zusatz: '', strasse: 'Gartenweg 12', plz: '12347', ort: 'Musterstadt', telefon: '', email: 'info@lindenhof-wohnbau.example', ansprechpartner: 'Herr Muster', ustId: '', notiz: 'Bauträger' },
+];
 
 /** Beispielprojekt Tiefbau, damit alle Module sofort mit Daten gezeigt werden können. */
 export function demoProjekt(): Projekt {
@@ -9,7 +19,8 @@ export function demoProjekt(): Projekt {
   p.art = 'auftrag';
   p.bauvorhaben = 'Erschließung Baugebiet "Am Lindenhof", 2. BA';
   p.bauort = 'Musterstadt, Lindenhofstraße';
-  p.auftraggeber = { name: 'Stadt Musterstadt', zusatz: 'Tiefbauamt', strasse: 'Rathausplatz 1', plz: '12345', ort: 'Musterstadt', telefon: '', email: 'tiefbau@musterstadt.de' };
+  p.kundeId = DEMO_KUNDE_ID;
+  p.auftraggeber = kundeAdresse(demoKunden()[0]);
   p.vorbemerkungen = 'Es gelten die VOB/B und VOB/C in der zum Zeitpunkt der Angebotsabgabe gültigen Fassung. Abrechnung nach Aufmaß gem. ATV DIN 18300 / 18306 / 18317.';
   p.nachlassProzent = 2;
   p.skontoProzent = 2;
