@@ -40,6 +40,7 @@ polier/
     │   ├── calc.ts             Rechenkern: Kalkulation, LV-Summen, Aufmaß, Rechnungen
     │   ├── formulas.ts         REB-Formelkatalog + Parser für freie Formeln
     │   ├── station.ts          Stationierung (Mittelwertverfahren)
+│   ├── theme.ts            Hell-/Dunkelmodus (hell, dunkel, auto)
 │   ├── gaeb.ts             GAEB DA XML 3.2 Export (X83/X84) und Import (X81–X86)
     │   ├── format.ts           Zahlen-/Datums-/Stationsformatierung, uid()
     │   ├── defaults.ts         Fabriken für neue Objekte, Standardparameter
@@ -256,7 +257,8 @@ Das vollständige Schema steht in `docs/openapi.yaml` (OpenAPI 3.1, `components.
 
 ## 9. Oberfläche
 
-- **Theme:** CSS-Variablen in `:root` (`--g-50` … `--g-900`, `--bg`, `--line`, …). Farbänderungen erfolgen zentral in `src/styles.css`.
+- **Theme:** CSS-Variablen in `:root` (`--g-50` … `--g-900`, `--bg`, `--line`, `--input-bg`, `--hint-*`, …). Farbänderungen erfolgen zentral in `src/styles.css`.
+- **Dunkelmodus:** `:root[data-theme="dark"]` überschreibt dieselben Variablen. `src/lib/theme.ts` setzt `data-theme` (Modi hell, dunkel, auto) und speichert die Wahl unter `polier-theme` im localStorage; ein Inline-Skript in `index.html` setzt das Theme vor dem ersten Rendern, damit nichts aufblitzt. Das Druckblatt nutzt feste Farben und bleibt immer hell.
 - **Navigation:** `view` im Store; `App.tsx` rendert die passende View. Module, die ein Projekt benötigen, sind ohne aktives Projekt deaktiviert.
 - **NumberInput:** Hält lokalen Text während der Eingabe, parst beim Verlassen (`parseDe`) und schreibt die Zahl in den Store. Dadurch sind Tausenderpunkte und Komma eingabefähig, ohne bei jedem Tastendruck zu formatieren.
 - **Druck:** `DruckView` rendert ein A4-Blatt (`.print-sheet`); `@media print` blendet Sidebar und Bedienelemente aus. PDF-Erzeugung über den Browser-Druckdialog.

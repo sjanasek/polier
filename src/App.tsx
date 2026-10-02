@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useStore, useProjekt, type View } from './store';
+import { applyTheme, loadTheme, saveTheme, type ThemeMode } from './lib/theme';
 import { ProjekteView } from './views/ProjekteView';
 import { LVView } from './views/LVView';
 import { KalkulationView } from './views/KalkulationView';
@@ -34,6 +36,16 @@ export default function App() {
   const view = useStore(s => s.view);
   const setView = useStore(s => s.setView);
   const { projekt } = useProjekt();
+  const [theme, setTheme] = useState<ThemeMode>(loadTheme);
+  useEffect(() => {
+    applyTheme(theme);
+    if (theme !== 'auto') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const h = () => applyTheme('auto');
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, [theme]);
+  const wechsleTheme = (m: ThemeMode) => { setTheme(m); saveTheme(m); };
 
   const renderBody = () => {
     if (view === 'projekte') return <ProjekteView />;
@@ -69,7 +81,14 @@ export default function App() {
         <button className={`nav-btn ${view === 'stammdaten' ? 'active' : ''}`} onClick={() => setView('stammdaten')}>
           <span className="ico">⚙</span>Stammdaten
         </button>
-        <div className="projekt-chip">
+        <div className="theme-switch" role="group" aria-label="Darstellung" style={{ marginTop: 'auto' }}>
+          {(['hell', 'dunkel', 'auto'] as ThemeMode[]).map(m => (
+            <button key={m} className={theme === m ? 'active' : ''} onClick={() => wechsleTheme(m)} title={m === 'auto' ? 'Systemeinstellung verwenden' : `${m === 'hell' ? 'Heller' : 'Dunkler'} Modus`}>
+              {m === 'hell' ? '☀ Hell' : m === 'dunkel' ? '☾ Dunkel' : 'Auto'}
+            </button>
+          ))}
+        </div>
+        <div className="projekt-chip" style={{ marginTop: 6 }}>
           {projekt ? (
             <>
               <span className="muted">Aktives Projekt</span>

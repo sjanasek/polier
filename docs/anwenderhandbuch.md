@@ -53,6 +53,10 @@ Links befindet sich die **Navigation** mit allen Modulen. Unten links wird das *
 | Drucken / Ausgabe | LV, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt als PDF |
 | Stammdaten | Eigene Firma, Geräte- und Materialpreise, Datensicherung |
 
+### Hell- und Dunkelmodus
+
+Unten in der Seitenleiste wählen Sie die Darstellung: **Hell** (Standard), **Dunkel** oder **Auto**. Bei „Auto“ folgt Polier der Systemeinstellung des Geräts. Die Wahl wird im Browser gespeichert. Gedruckt wird immer hell, unabhängig vom gewählten Modus.
+
 ### Zahleneingabe
 
 Zahlen werden in deutscher Schreibweise eingegeben: Komma als Dezimaltrenner, z. B. `1.234,56` oder `1234,56`. Ein Punkt wird ebenfalls als Dezimaltrenner akzeptiert, wenn kein Komma vorhanden ist. Mit **Enter** oder **Tab** wird der Wert übernommen.

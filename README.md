@@ -27,6 +27,8 @@ npm run build        # Produktions-Build nach dist/
 | Drucken | LV ohne Preise, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt als PDF über den Browser |
 | GAEB | Export als GAEB DA XML 3.2 X83 (Ausschreibung) und X84 (Angebot), Import von X81–X86 ins LV |
 
+Hell- und Dunkelmodus (umschaltbar, optional automatisch nach Systemeinstellung).
+
 ## Dokumentation
 
 - [Anwenderhandbuch](docs/anwenderhandbuch.md)
