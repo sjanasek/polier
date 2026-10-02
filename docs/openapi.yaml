@@ -1,0 +1,470 @@
+openapi: 3.1.0
+info:
+  title: Polier – Datenformat und API-Vorschlag
+  version: 1.0.0
+  description: |
+    Polier ist eine Browser-Anwendung ohne Server. Diese Beschreibung dokumentiert
+    das Schema der Sicherungsdatei (Export/Import unter "Stammdaten → Datensicherung")
+    und schlägt REST-Pfade für eine spätere Server-Variante vor.
+    Die Pfade sind derzeit NICHT implementiert; die Schemas unter components.schemas
+    entsprechen exakt den TypeScript-Typen in src/types.ts.
+servers:
+  - url: http://localhost:8080/api
+    description: Vorschlag für einen künftigen Server (nicht implementiert)
+
+paths:
+  /backup:
+    get:
+      summary: Vollständige Sicherung (alle Projekte + Stammdaten)
+      responses:
+        '200':
+          description: Sicherungsdatei
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sicherung'
+    put:
+      summary: Sicherung einspielen (ersetzt alle Daten)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sicherung'
+      responses:
+        '204':
+          description: Übernommen
+  /projekte:
+    get:
+      summary: Projekte auflisten
+      responses:
+        '200':
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Projekt'
+    post:
+      summary: Projekt anlegen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Projekt'
+      responses:
+        '201':
+          description: Angelegt
+  /projekte/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Projekt lesen
+      responses:
+        '200':
+          description: Projekt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projekt'
+    put:
+      summary: Projekt vollständig ersetzen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Projekt'
+      responses:
+        '204':
+          description: Gespeichert
+    delete:
+      summary: Projekt löschen
+      responses:
+        '204':
+          description: Gelöscht
+  /projekte/{id}/kalkulation:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Kalkulationsergebnis (Schlussblatt) berechnen
+      responses:
+        '200':
+          description: Ergebnis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KalkErgebnis'
+  /projekte/{id}/rechnungen/{rechnungId}/berechnung:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: rechnungId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Kumulative Rechnungssumme berechnen
+      responses:
+        '200':
+          description: Ergebnis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RechnungsErgebnis'
+  /stammdaten:
+    get:
+      summary: Stammdaten lesen
+      responses:
+        '200':
+          description: Stammdaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stammdaten'
+    put:
+      summary: Stammdaten speichern
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stammdaten'
+      responses:
+        '204':
+          description: Gespeichert
+
+components:
+  schemas:
+    Sicherung:
+      type: object
+      required: [version, projekte, stammdaten]
+      properties:
+        version: { type: integer, const: 1 }
+        exportiert: { type: string, format: date-time }
+        projekte:
+          type: array
+          items: { $ref: '#/components/schemas/Projekt' }
+        stammdaten: { $ref: '#/components/schemas/Stammdaten' }
+
+    Adresse:
+      type: object
+      properties:
+        name: { type: string }
+        zusatz: { type: string }
+        strasse: { type: string }
+        plz: { type: string }
+        ort: { type: string }
+        telefon: { type: string }
+        email: { type: string }
+
+    Firma:
+      allOf:
+        - $ref: '#/components/schemas/Adresse'
+        - type: object
+          properties:
+            inhaber: { type: string }
+            bank: { type: string }
+            iban: { type: string }
+            bic: { type: string }
+            ustId: { type: string }
+            steuerNr: { type: string }
+
+    Stammdaten:
+      type: object
+      required: [firma, geraete, material, einheiten]
+      properties:
+        firma: { $ref: '#/components/schemas/Firma' }
+        geraete:
+          type: array
+          items:
+            type: object
+            required: [id, bezeichnung, stundensatz]
+            properties:
+              id: { type: string }
+              bezeichnung: { type: string }
+              stundensatz: { type: number, description: '€ je Stunde bzw. Satz' }
+        material:
+          type: array
+          items:
+            type: object
+            required: [id, bezeichnung, einheit, preis]
+            properties:
+              id: { type: string }
+              bezeichnung: { type: string }
+              einheit: { type: string }
+              preis: { type: number }
+        einheiten:
+          type: array
+          items: { type: string }
+
+    Kostenart:
+      type: string
+      enum: [lohn, stoffe, geraete, fremd, sonstiges]
+
+    PositionsArt:
+      type: string
+      enum: [N, B, A, Z, H]
+      description: N Normal, B Bedarf, A Alternativ, Z Zulage, H Hinweistext
+
+    KalkAnsatz:
+      type: object
+      required: [id, kostenart, bezeichnung, menge, preis, einheit]
+      properties:
+        id: { type: string }
+        kostenart: { $ref: '#/components/schemas/Kostenart' }
+        bezeichnung: { type: string }
+        menge: { type: number, description: 'Menge je LV-Einheit; bei Lohn Stunden' }
+        preis: { type: number, description: 'Preis je Ansatz-Einheit; bei Lohn 0 = Kalkulationslohn' }
+        einheit: { type: string }
+
+    Position:
+      type: object
+      required: [id, oz, kurztext, langtext, menge, einheit, art, ep, epAusKalkulation, ansaetze]
+      properties:
+        id: { type: string }
+        oz: { type: string, example: '01.0010' }
+        kurztext: { type: string }
+        langtext: { type: string }
+        menge: { type: number }
+        einheit: { type: string }
+        art: { $ref: '#/components/schemas/PositionsArt' }
+        ep: { type: number, description: 'Einheitspreis netto (manuell)' }
+        epAusKalkulation: { type: boolean }
+        ansaetze:
+          type: array
+          items: { $ref: '#/components/schemas/KalkAnsatz' }
+
+    Titel:
+      type: object
+      required: [id, oz, bezeichnung, vorbemerkung, positionen]
+      properties:
+        id: { type: string }
+        oz: { type: string, example: '01' }
+        bezeichnung: { type: string }
+        vorbemerkung: { type: string }
+        positionen:
+          type: array
+          items: { $ref: '#/components/schemas/Position' }
+
+    ZuschlagDetail:
+      type: object
+      required: [bgk, agk, wug]
+      properties:
+        bgk: { type: number, description: '%' }
+        agk: { type: number, description: '%' }
+        wug: { type: number, description: '%' }
+
+    KalkParameter:
+      type: object
+      required: [methode, grundlohn, zulagenProzent, sozialkostenProzent, lohnnebenkostenProzent, zuschlaege, bgkPosten, agkProzent, wugProzent, umlageGewichte, zielSumme]
+      properties:
+        methode: { type: string, enum: [zuschlag, endsumme] }
+        grundlohn: { type: number }
+        zulagenProzent: { type: number }
+        sozialkostenProzent: { type: number }
+        lohnnebenkostenProzent: { type: number }
+        zuschlaege:
+          type: object
+          description: Je Kostenart
+          additionalProperties: { $ref: '#/components/schemas/ZuschlagDetail' }
+        bgkPosten:
+          type: array
+          items:
+            type: object
+            required: [id, bezeichnung, betrag]
+            properties:
+              id: { type: string }
+              bezeichnung: { type: string }
+              betrag: { type: number }
+        agkProzent: { type: number, description: '% der Angebotssumme' }
+        wugProzent: { type: number, description: '% der Angebotssumme' }
+        umlageGewichte:
+          type: object
+          additionalProperties: { type: number }
+        zielSumme: { type: number, description: 'Angebotsendsumme netto; 0 = berechnen' }
+
+    AufmassZeile:
+      type: object
+      required: [id, blattNr, datum, positionId, formelNr, werte, freieFormel, faktor, abzug, bemerkung]
+      properties:
+        id: { type: string }
+        blattNr: { type: string }
+        datum: { type: string, format: date }
+        positionId: { type: string }
+        formelNr: { type: string, description: 'Nummer aus dem Formelkatalog; 91 = freie Formel' }
+        werte:
+          type: array
+          items: { type: number }
+        freieFormel: { type: string }
+        faktor: { type: number }
+        abzug: { type: boolean }
+        bemerkung: { type: string }
+
+    StationsProfil:
+      type: object
+      required: [id, station, wert, wert2, bemerkung]
+      properties:
+        id: { type: string }
+        station: { type: number, description: 'Station in m' }
+        wert: { type: number, description: 'Breite (m) oder Querschnittsfläche (m²)' }
+        wert2: { type: number, description: 'Tiefe (m) bei Modus volumenBT' }
+        bemerkung: { type: string }
+
+    Stationierung:
+      type: object
+      required: [id, blattNr, datum, positionId, bezeichnung, modus, faktor, abzug, profile, bemerkung]
+      properties:
+        id: { type: string }
+        blattNr: { type: string }
+        datum: { type: string, format: date }
+        positionId: { type: string }
+        bezeichnung: { type: string }
+        modus: { type: string, enum: [laenge, flaeche, volumen, volumenBT] }
+        faktor: { type: number }
+        abzug: { type: boolean }
+        profile:
+          type: array
+          items: { $ref: '#/components/schemas/StationsProfil' }
+        bemerkung: { type: string }
+
+    Rechnung:
+      type: object
+      required: [id, lfdNr, rechnungsNr, typ, datum, stichtag, status, nachlassProzent, sicherheitseinbehaltProzent, skontoProzent, skontoTage, zahlungszielTage, reverseCharge, sonstigeAbzuege, zahlungen, snapshot, bemerkung]
+      properties:
+        id: { type: string }
+        lfdNr: { type: integer }
+        rechnungsNr: { type: string }
+        typ: { type: string, enum: [abschlag, teilschluss, schluss] }
+        datum: { type: string, format: date }
+        stichtag: { type: string, format: date, description: 'Leistungsstand bis einschließlich' }
+        status: { type: string, enum: [entwurf, gestellt, bezahlt] }
+        nachlassProzent: { type: number }
+        sicherheitseinbehaltProzent: { type: number }
+        skontoProzent: { type: number }
+        skontoTage: { type: integer }
+        zahlungszielTage: { type: integer }
+        reverseCharge: { type: boolean, description: '§ 13b UStG' }
+        sonstigeAbzuege:
+          type: array
+          items:
+            type: object
+            required: [id, bezeichnung, betrag]
+            properties:
+              id: { type: string }
+              bezeichnung: { type: string }
+              betrag: { type: number }
+        zahlungen:
+          type: array
+          items:
+            type: object
+            required: [id, datum, betrag, bemerkung]
+            properties:
+              id: { type: string }
+              datum: { type: string, format: date }
+              betrag: { type: number }
+              bemerkung: { type: string }
+        snapshot:
+          description: Eingefrorene kumulierte Mengen beim Stellen der Rechnung
+          oneOf:
+            - type: 'null'
+            - type: array
+              items:
+                type: object
+                required: [positionId, mengeKum]
+                properties:
+                  positionId: { type: string }
+                  mengeKum: { type: number }
+        bemerkung: { type: string }
+
+    Projekt:
+      type: object
+      required: [id, nummer, bezeichnung, art, bauvorhaben, bauort, datum, auftraggeber, mwstProzent, nachlassProzent, skontoProzent, skontoTage, sicherheitseinbehaltProzent, zahlungszielTage, vorbemerkungen, lv, kalk, aufmass, stationierungen, rechnungen, angelegt]
+      properties:
+        id: { type: string }
+        nummer: { type: string }
+        bezeichnung: { type: string }
+        art: { type: string, enum: [angebot, ausschreibung, auftrag] }
+        bauvorhaben: { type: string }
+        bauort: { type: string }
+        datum: { type: string, format: date }
+        auftraggeber: { $ref: '#/components/schemas/Adresse' }
+        mwstProzent: { type: number }
+        nachlassProzent: { type: number }
+        skontoProzent: { type: number }
+        skontoTage: { type: integer }
+        sicherheitseinbehaltProzent: { type: number }
+        zahlungszielTage: { type: integer }
+        vorbemerkungen: { type: string }
+        lv:
+          type: array
+          items: { $ref: '#/components/schemas/Titel' }
+        kalk: { $ref: '#/components/schemas/KalkParameter' }
+        aufmass:
+          type: array
+          items: { $ref: '#/components/schemas/AufmassZeile' }
+        stationierungen:
+          type: array
+          items: { $ref: '#/components/schemas/Stationierung' }
+        rechnungen:
+          type: array
+          items: { $ref: '#/components/schemas/Rechnung' }
+        angelegt: { type: string, format: date }
+
+    KostenSplit:
+      type: object
+      properties:
+        lohn: { type: number }
+        stoffe: { type: number }
+        geraete: { type: number }
+        fremd: { type: number }
+        sonstiges: { type: number }
+
+    KalkErgebnis:
+      type: object
+      description: Ergebnis von kalkulation() in src/lib/calc.ts
+      properties:
+        kalkLohn: { type: number }
+        ektSumme: { $ref: '#/components/schemas/KostenSplit' }
+        ektGesamt: { type: number }
+        bgk: { type: number }
+        herstellkosten: { type: number }
+        agk: { type: number }
+        wug: { type: number }
+        angebotssumme: { type: number }
+        umlage: { type: number }
+        zuschlagsaetze: { $ref: '#/components/schemas/KostenSplit' }
+        umlageBetraege: { $ref: '#/components/schemas/KostenSplit' }
+        zielModus: { type: boolean }
+
+    RechnungsErgebnis:
+      type: object
+      description: Ergebnis von rechnungBerechnen() in src/lib/calc.ts
+      properties:
+        leistungKum: { type: number }
+        nachlass: { type: number }
+        nettoNachNachlass: { type: number }
+        sicherheitseinbehalt: { type: number }
+        sonstigeAbzuege: { type: number }
+        nettoZahlbar: { type: number }
+        mwst: { type: number }
+        bruttoKum: { type: number }
+        bisherGestellt: { type: number }
+        rechnungsbetrag: { type: number }
+        skontoBetrag: { type: number }
+        zahlungenGesamt: { type: number }
+        offen: { type: number }
