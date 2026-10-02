@@ -35,7 +35,7 @@ export default function App() {
   const setView = useStore(s => s.setView);
   const { projekt } = useProjekt();
 
-  const Body = () => {
+  const renderBody = () => {
     if (view === 'projekte') return <ProjekteView />;
     if (view === 'stammdaten') return <StammdatenView />;
     if (!projekt) return <div className="empty">Bitte zuerst ein Projekt anlegen oder auswählen.</div>;
@@ -85,7 +85,7 @@ export default function App() {
           {projekt && <span className="muted">{projekt.bauvorhaben || projekt.bezeichnung}</span>}
         </div>
         <div className="content">
-          <Body />
+          {renderBody()}
         </div>
       </main>
     </div>

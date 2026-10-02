@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useStore, useProjekt } from '../store';
 import { Card, NumberInput, KPI, NumField, confirmDelete } from '../components/ui';
 import { KOSTENARTEN, KOSTENART_LISTE, type KalkAnsatz, type KalkMethode, type KalkParameter, type Kostenart, type Position } from '../types';
@@ -116,7 +116,7 @@ export function KalkulationView() {
                 </thead>
                 <tbody>
                   {projekt.lv.map(t => (
-                    <PosGroup key={t.id} tid={t.id} />
+                    renderPosGroup(t.id)
                   ))}
                 </tbody>
               </table>
@@ -256,10 +256,10 @@ export function KalkulationView() {
     const a: KalkAnsatz = { id: uid(), kostenart: ka, bezeichnung: '', menge: ka === 'lohn' ? 0.1 : 1, preis: 0, einheit: ka === 'lohn' || ka === 'geraete' ? 'h' : '' };
     updPos(pid, x => ({ ...x, ansaetze: [...x.ansaetze, a] }));
   }
-  function PosGroup({ tid }: { tid: string }) {
+  function renderPosGroup(tid: string) {
     const t = projekt!.lv.find(x => x.id === tid)!;
     return (
-      <>
+      <Fragment key={tid}>
         <tr className="titel"><td colSpan={14}>{t.oz} {t.bezeichnung}</td></tr>
         {t.positionen.filter(p => p.art !== 'H').map(p => {
           const r = kalkEP(p, erg);
@@ -279,7 +279,7 @@ export function KalkulationView() {
             </tr>
           );
         })}
-      </>
+      </Fragment>
     );
   }
 }
