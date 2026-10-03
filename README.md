@@ -22,6 +22,7 @@ npm run build        # Produktions-Build nach dist/
 | Projekte | Angebot, Ausschreibung oder Auftrag; Auftraggeber, MwSt., Nachlass, Skonto, Sicherheitseinbehalt |
 | Leistungsverzeichnis | Titel, Positionen (Normal-, Bedarfs-, Alternativ-, Zulage-, Hinweisposition), Lang-/Kurztext, EP manuell oder aus Kalkulation |
 | Kalkulation | Mittellohn, Einzelkosten je Position (Lohn, Stoffe, Geräte, Fremdleistung, Sonstiges), detaillierte Zuschläge (BGK/AGK/W&G je Kostenart), Endsummenkalkulation mit Umlage und vorgebbarer Angebotsendsumme |
+| Bauzeitenplan | Balkenplan mit kritischem Weg; Dauern werden aus den Zeitansätzen der Kalkulation berechnet (Lohn-/Gerätestunden ÷ Kräfte), Arbeitskalender mit Feiertagen |
 | Aufmaß | Aufmaßblätter mit Formelkatalog nach REB 23.003, freie Formeln, Faktor, Abzug, Mengenübersicht |
 | Stationierung | Stationen in km+m, Mittelwertverfahren (Gauß-Elling) für Länge, Fläche, Volumen |
 | Rechnungen | Kumulative Abschlags-/Teilschluss-/Schlussrechnung nach § 16 VOB/B, Sicherheitseinbehalt, § 13b, Festschreibung, Zahlungseingänge |

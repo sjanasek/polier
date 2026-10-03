@@ -5,6 +5,8 @@ import { KOSTENARTEN, KOSTENART_LISTE, PROJEKT_ARTEN } from '../types';
 import { addDays, datumDe, eur, num2, num3, numFlex, pct, stationFmt } from '../lib/format';
 import { aufmassZeileErgebnis, effektiverEP, kalkEP, kalkulation, lvSummen, rechnungBerechnen, zaehltInSumme, type KalkErgebnis } from '../lib/calc';
 import { formelByNr, parameterShortName } from '../lib/formulas';
+import { Gantt } from '../components/Gantt';
+import { bauzeitVon, planen } from '../lib/bauzeit';
 import { stationsAbschnitte, stationierungSumme } from '../lib/station';
 
 const ARTEN: { art: DruckArt; label: string }[] = [
@@ -13,6 +15,7 @@ const ARTEN: { art: DruckArt; label: string }[] = [
   { art: 'rechnung', label: 'Rechnung' },
   { art: 'aufmass', label: 'Aufmaßblätter' },
   { art: 'kalkulation', label: 'Kalkulationsblatt' },
+  { art: 'bauzeit', label: 'Bauzeitenplan' },
 ];
 
 const TYPEN = { abschlag: 'Abschlagsrechnung', teilschluss: 'Teilschlussrechnung', schluss: 'Schlussrechnung' };
@@ -63,6 +66,7 @@ export function DruckView() {
         {art === 'rechnung' && (rechnung ? <RechnungDruck projekt={projekt} r={rechnung} erg={erg} firma={firma} /> : <p>Keine Rechnung vorhanden.</p>)}
         {art === 'aufmass' && <AufmassDruck projekt={projekt} />}
         {art === 'kalkulation' && <KalkDruck projekt={projekt} erg={erg} />}
+        {art === 'bauzeit' && <BauzeitDruck projekt={projekt} />}
         <div className="fuss">
           {firma.name}{firma.inhaber && ` · ${firma.inhaber}`} · {firma.strasse}, {firma.plz} {firma.ort}{firma.telefon && ` · Tel. ${firma.telefon}`}{firma.email && ` · ${firma.email}`}
           {firma.bank && <><br />{firma.bank} · IBAN {firma.iban} · BIC {firma.bic}</>}
@@ -297,6 +301,33 @@ function KalkDruck({ projekt, erg }: { projekt: Projekt; erg: KalkErgebnis }) {
           ])}
         </tbody>
       </table>
+    </>
+  );
+}
+
+function BauzeitDruck({ projekt }: { projekt: Projekt }) {
+  const plan = bauzeitVon(projekt);
+  const t = planen(plan, projekt.lv);
+  return (
+    <>
+      <h1>Bauzeitenplan</h1>
+      <div><b>{projekt.bauvorhaben || projekt.bezeichnung}</b> · Projekt-Nr. {projekt.nummer} · AG: {projekt.auftraggeber.name}</div>
+      {t.fehler ? <p>{t.fehler}</p> : (
+        <>
+          <div className="text">
+            Baubeginn {datumDe(t.start)} · Bauende {datumDe(t.ende)} · {t.arbeitstage} Arbeitstage ({t.kalendertage} Kalendertage) · {num2(t.lohnstunden)} Lohnstunden · max. {t.spitze} Kräfte<br />
+            Berechnet aus den Zeitansätzen der Kalkulation bei {numFlex(plan.stundenProTag)} Stunden je Arbeitstag, Standardbesetzung {plan.standardKraefte} Kräfte.
+          </div>
+          <Gantt zeilen={t.zeilen} arbeitstage={plan.arbeitstage} feiertage={plan.feiertage} dayPx={Math.max(4, Math.min(18, Math.floor(560 / Math.max(t.kalendertage + 3, 1))))} labelW={210} print />
+          <h2>Vorgänge</h2>
+          <table>
+            <thead><tr><th>Nr.</th><th>Vorgang</th><th className="num">Lohn-Std</th><th className="num">Kräfte</th><th className="num">AT</th><th>Beginn</th><th>Ende</th><th className="num">Puffer</th></tr></thead>
+            <tbody>
+              {t.zeilen.map(z => <tr key={z.vorgang.id}><td>{z.nr}</td><td>{z.vorgang.name}</td><td className="num">{num2(z.aufwand.lohn)}</td><td className="num">{z.kraefte}</td><td className="num">{z.dauer}</td><td>{datumDe(z.start)}</td><td>{datumDe(z.ende)}</td><td className="num">{z.kritisch ? 'kritisch' : z.puffer}</td></tr>)}
+            </tbody>
+          </table>
+        </>
+      )}
     </>
   );
 }

@@ -5,9 +5,9 @@ import { neuesProjekt, standardStammdaten } from './lib/defaults';
 import { demoKunden, demoProjekt } from './lib/demo';
 import { kundeAdresse } from './lib/kunden';
 
-export type View = 'projekte' | 'kunden' | 'lv' | 'kalkulation' | 'aufmass' | 'stationierung' | 'rechnungen' | 'druck' | 'stammdaten';
+export type View = 'projekte' | 'kunden' | 'lv' | 'kalkulation' | 'bauzeit' | 'aufmass' | 'stationierung' | 'rechnungen' | 'druck' | 'stammdaten';
 
-export type DruckArt = 'lv' | 'angebot' | 'rechnung' | 'aufmass' | 'kalkulation';
+export type DruckArt = 'lv' | 'angebot' | 'rechnung' | 'aufmass' | 'kalkulation' | 'bauzeit';
 
 export interface DruckAuftrag { art: DruckArt; rechnungId?: string }
 

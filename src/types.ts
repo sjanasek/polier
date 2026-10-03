@@ -229,8 +229,52 @@ export const PROJEKT_ARTEN: Record<ProjektArt, string> = {
   auftrag: 'Auftrag / Abrechnung',
 };
 
+// ---------------------------------------------------------------------------
+// Bauzeitenplan
+// ---------------------------------------------------------------------------
+
+/** Woraus die Dauer eines Vorgangs berechnet wird */
+export type DauerModus = 'lohn' | 'geraete' | 'manuell';
+
+export const DAUER_MODI: Record<DauerModus, string> = {
+  lohn: 'Lohnstunden',
+  geraete: 'Gerätestunden',
+  manuell: 'manuell',
+};
+
+export interface Vorgang {
+  id: ID;
+  name: string;
+  /** LV-Positionen, deren Zeitansätze (aus der Kalkulation) in den Vorgang einfließen */
+  positionIds: ID[];
+  modus: DauerModus;
+  /** Anzahl Arbeitskräfte bzw. Geräte; 0 = Standard des Plans */
+  kraefte: number;
+  /** Dauer in Arbeitstagen bei modus = manuell (0 = Meilenstein) */
+  dauerManuell: number;
+  /** Vorgänger (Ende-Anfang-Beziehung) */
+  vorgaenger: ID[];
+  /** Verzug in Arbeitstagen nach den Vorgängern (negativ = Überlappung) */
+  verzug: number;
+  /** Frühester Beginn (ISO-Datum), leer = keine Vorgabe */
+  fruehesterStart: string;
+  notiz: string;
+}
+
+export interface Bauzeitenplan {
+  start: string;
+  stundenProTag: number;
+  standardKraefte: number;
+  /** Arbeitstage als Wochentage, 0 = Sonntag … 6 = Samstag */
+  arbeitstage: number[];
+  feiertage: string[];
+  vorgaenge: Vorgang[];
+}
+
 export interface Projekt {
   id: ID;
+  /** Bauzeitenplan (optional; wird beim ersten Öffnen angelegt) */
+  bauzeit?: Bauzeitenplan;
   /** Verknüpfung zum Adressbuch (optional). Die Adresse unter auftraggeber ist eine Kopie. */
   kundeId?: ID | null;
   nummer: string;

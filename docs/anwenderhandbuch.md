@@ -11,7 +11,7 @@ Das Programm läuft komplett im Browser. Alle Daten werden lokal auf dem Rechner
 1. [Erste Schritte](#1-erste-schritte)
 2. [Projekte](#2-projekte) und [Adressverwaltung](#adressverwaltung-kunden)
 3. [Leistungsverzeichnis (LV)](#3-leistungsverzeichnis-lv)
-4. [Baukalkulation](#4-baukalkulation)
+4. [Baukalkulation](#4-baukalkulation) und [Bauzeitenplan](#bauzeitenplan)
 5. [Aufmaß nach VOB/C](#5-aufmaß-nach-vobc)
 6. [Stationierungsaufmaß (Tiefbau)](#6-stationierungsaufmaß-tiefbau)
 7. [Rechnungen – kumulative Abrechnung](#7-rechnungen--kumulative-abrechnung)
@@ -48,6 +48,7 @@ Links befindet sich die **Navigation** mit allen Modulen. Unten links wird das *
 | Adressen / Kunden | Adressverwaltung mit Kundennummern und allen Projekten je Kunde |
 | Leistungsverzeichnis | Titel und Positionen mit Mengen, Einheiten und Preisen |
 | Kalkulation | Einzelkosten, Mittellohn, Zuschläge, Angebotsendsumme |
+| Bauzeitenplan | Balkenplan, dessen Dauern aus den Zeitansätzen der Kalkulation berechnet werden |
 | Aufmaß | Aufmaßblätter mit REB-Formeln |
 | Stationierung | Streckenaufmaß mit Stationen und Querprofilen |
 | Rechnungen | Abschlags-, Teilschluss- und Schlussrechnungen, Zahlungen |
@@ -220,6 +221,32 @@ EP = Σ (EKT je Kostenart × (1 + BGK % + AGK % + W&G %)). Die Zuschläge stamme
 Das **Schlussblatt** zeigt EKT je Kostenart, BGK, Herstellkosten, AGK, W&G und die kalkulierte Angebotssumme. Darunter steht die Angebotssumme laut LV mit auf Cent gerundeten Einheitspreisen und die Rundungsdifferenz.
 
 ---
+
+### Bauzeitenplan
+
+Der Bauzeitenplan greift auf die **Zeitansätze der Kalkulation** zu. Die Dauer eines Vorgangs ergibt sich so:
+
+```
+Stunden = Σ (Stunden je Einheit aus den Ansätzen × Positionsmenge)
+Dauer in Arbeitstagen = aufgerundet( Stunden ÷ (Kräfte × Arbeitsstunden je Tag) )
+```
+
+Ändern Sie in der Kalkulation einen Stundenansatz oder im LV eine Menge, ändert sich die Dauer im Plan sofort.
+
+**Vorgehen**
+
+1. Im Bauzeitenplan Baubeginn, Arbeitsstunden je Tag (Standard 8), Standardbesetzung und Arbeitstage festlegen. Mit „Gesetzl. Feiertage eintragen“ werden die bundesweiten Feiertage für Baujahr und Folgejahr übernommen; weitere Ausfalltage (Regional-, Urlaubs-, Schlechtwettertage) lassen sich einzeln hinzufügen.
+2. „Aus LV erzeugen“ legt je Titel oder je Position einen Vorgang an. Nur Normal- und Zulagepositionen werden berücksichtigt, Bedarfs- und Alternativpositionen nicht. Auf Wunsch werden die Vorgänge nacheinander verknüpft.
+3. Je Vorgang anpassen: **Basis** (Lohnstunden, Gerätestunden oder manuelle Dauer), **Kräfte** (0 = Standardbesetzung), **Vorgänger** als Zeilennummern (z. B. „1, 3“), **Verzug** in Arbeitstagen (negativ = Überlappung). Ein Klick auf die Zeile öffnet die Zuordnung der Positionen und einen optionalen frühesten Beginn.
+4. Der Balkenplan zeigt Vorgänge, Abhängigkeiten, Wochenenden und Feiertage. Orange Balken liegen auf dem **kritischen Weg** (kein Puffer), grüne haben Puffer. Dauer 0 ergibt einen Meilenstein.
+
+**Hinweise**
+
+- Gerätestunden zählen nur Geräteansätze mit der Einheit „h“. Fremdleistungen, Stoffe und Geräteansätze in Tagen haben keine Zeitbasis und fließen nicht ein; solche Vorgänge brauchen die Basis „manuell“.
+- Hat ein Vorgang keine Zeitansätze, werden 1 Tag angesetzt und ein Warnzeichen angezeigt.
+- Positionen mit Zeitansätzen, die keinem Vorgang zugeordnet sind, werden in einem Hinweis oben gemeldet.
+- Oben stehen Baubeginn, Bauende, Bauzeit in Arbeits- und Kalendertagen, Lohnstunden und die maximale gleichzeitige Besetzung.
+- Ausdruck: Drucken / Ausgabe → Bauzeitenplan.
 
 ## 5. Aufmaß nach VOB/C
 

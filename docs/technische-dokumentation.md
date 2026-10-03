@@ -35,12 +35,14 @@ polier/
     ├── styles.css              Theme (hellgrün), Layout, Tabellen, Druck-CSS
     ├── types.ts                Domänenmodell (alle Interfaces und Enums)
     ├── components/
+    │   ├── Gantt.tsx           SVG-Balkenplan (Bildschirm und Druck)
     │   └── ui.tsx              NumberInput (de-DE), Field, Card, KPI, …
     ├── lib/
     │   ├── calc.ts             Rechenkern: Kalkulation, LV-Summen, Aufmaß, Rechnungen
     │   ├── formulas.ts         REB-Formelkatalog + Parser für freie Formeln
     │   ├── station.ts          Stationierung (Mittelwertverfahren)
 │   ├── theme.ts            Hell-/Dunkelmodus (hell, dunkel, auto)
+│   ├── bauzeit.ts          Bauzeitenplan: Zeitaufwand aus Kalkulation, Terminrechnung, Kalender
 │   ├── kunden.ts           Adressbuch-Logik (Kundennummern, Adresskopie, Kunden aus Projekten)
 │   ├── gaeb.ts             GAEB DA XML 3.2 Export (X83/X84) und Import (X81–X86)
     │   ├── format.ts           Zahlen-/Datums-/Stationsformatierung, uid()
@@ -50,6 +52,7 @@ polier/
     └── views/
         ├── ProjekteView.tsx
         ├── KundenView.tsx
+        ├── BauzeitView.tsx
         ├── LVView.tsx
         ├── KalkulationView.tsx
         ├── AufmassView.tsx
@@ -77,6 +80,7 @@ Node 18 oder neuer wird vorausgesetzt.
 
 ```
 Projekt
+├── bauzeit?: Bauzeitenplan
 ├── kundeId?: Verknüpfung zum Adressbuch (optional, null = keine Zuordnung)
 ├── Stammfelder: nummer, bezeichnung, art (angebot|ausschreibung|auftrag), bauvorhaben, bauort, datum
 ├── auftraggeber: Adresse
@@ -214,6 +218,20 @@ Der Abzug der Vorrechnungen erfolgt mit deren **Rechnungsbeträgen**, nicht mit 
 | `volumenBT` | wert × wert2 | (Q1 + Q2)/2 × Δl |
 
 `stationierungSumme(s)` = Σ Abschnitte × faktor × Vorzeichen. Stationen werden als Meter gespeichert; `stationFmt`/`stationParse` wandeln von/nach `km+m` (z. B. `0+125,50`).
+
+## 7b. Bauzeitenplan (`src/lib/bauzeit.ts`)
+
+Datenmodell: `Projekt.bauzeit?: Bauzeitenplan { start, stundenProTag, standardKraefte, arbeitstage[], feiertage[], vorgaenge[] }`, `Vorgang { positionIds[], modus (lohn|geraete|manuell), kraefte, dauerManuell, vorgaenger[], verzug, fruehesterStart }`. Der Plan wird erst beim ersten Bearbeiten im Projekt gespeichert (`bauzeitVon` liefert bis dahin Standardwerte).
+
+**Zeitaufwand:** `positionAufwand(pos)` summiert die Ansatzmengen der Kostenart Lohn (Stunden je Einheit) sowie der Kostenart Geräte mit Einheit „h“ und multipliziert mit der Positionsmenge. Die Werte werden bei jedem Rendern frisch aus der Kalkulation berechnet und nicht im Vorgang gespeichert, der Plan folgt also automatisch jeder Änderung.
+
+**Dauer:** `ceil(Stunden / (Kräfte × stundenProTag))`, mindestens 1 Tag; ohne Zeitansätze 1 Tag mit Kennzeichen `ohneAufwand`; bei `manuell` die eingegebene Dauer (0 = Meilenstein).
+
+**Terminrechnung `planen(plan, lv)`:** Arbeitskalender aus Wochentagen und Feiertagen (UTC-Datumsrechnung, keine Zeitzonenfehler), Rechnung in Arbeitstag-Indizes. Topologische Sortierung (Kahn) mit Zykluserkennung; Vorwärtsrechnung `ES = max(frühester Beginn, EF(Vorgänger) + Verzug)`, Rückwärtsrechnung `LF = min(LS(Nachfolger) − Verzug(Nachfolger))`, Puffer `LS − ES`, kritisch bei Puffer ≤ 0. Ergebnis `Terminplan` mit Beginn/Ende je Vorgang, Bauzeit in Arbeits- und Kalendertagen, Personalbedarf je Arbeitstag und Spitzenbesetzung. Beziehungen sind ausschließlich Ende-Anfang mit Verzug.
+
+`bundesFeiertage(jahr)` berechnet Ostern nach Gauß und leitet Karfreitag, Ostermontag, Christi Himmelfahrt und Pfingstmontag ab; regionale Feiertage sind nicht enthalten.
+
+`components/Gantt.tsx` zeichnet den Plan als SVG (Monats-, KW- und Tagesleiste, Wochenend-/Feiertagsschraffur, Abhängigkeitspfeile). Die Druckfassung verwendet feste helle Farben und skaliert über `viewBox`.
 
 ## 7a. GAEB-Schnittstelle (`src/lib/gaeb.ts`)
 

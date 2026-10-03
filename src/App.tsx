@@ -5,6 +5,7 @@ import { ProjekteView } from './views/ProjekteView';
 import { KundenView } from './views/KundenView';
 import { LVView } from './views/LVView';
 import { KalkulationView } from './views/KalkulationView';
+import { BauzeitView } from './views/BauzeitView';
 import { AufmassView } from './views/AufmassView';
 import { StationierungView } from './views/StationierungView';
 import { RechnungenView } from './views/RechnungenView';
@@ -17,6 +18,7 @@ const NAV: { view: View; label: string; ico: string; needsProjekt?: boolean }[] 
   { view: 'kunden', label: 'Adressen / Kunden', ico: '☎' },
   { view: 'lv', label: 'Leistungsverzeichnis', ico: '≡', needsProjekt: true },
   { view: 'kalkulation', label: 'Kalkulation', ico: '∑', needsProjekt: true },
+  { view: 'bauzeit', label: 'Bauzeitenplan', ico: '⏱', needsProjekt: true },
   { view: 'aufmass', label: 'Aufmaß', ico: '∠', needsProjekt: true },
   { view: 'stationierung', label: 'Stationierung', ico: '⟷', needsProjekt: true },
   { view: 'rechnungen', label: 'Rechnungen', ico: '€', needsProjekt: true },
@@ -28,6 +30,7 @@ const TITEL: Record<View, string> = {
   kunden: 'Adressverwaltung',
   lv: 'Leistungsverzeichnis',
   kalkulation: 'Baukalkulation',
+  bauzeit: 'Bauzeitenplan',
   aufmass: 'Aufmaß nach VOB/C (REB-Formeln)',
   stationierung: 'Stationierungsaufmaß (Tiefbau)',
   rechnungen: 'Rechnungen – kumulative Abrechnung',
@@ -58,6 +61,7 @@ export default function App() {
     switch (view) {
       case 'lv': return <LVView />;
       case 'kalkulation': return <KalkulationView />;
+      case 'bauzeit': return <BauzeitView />;
       case 'aufmass': return <AufmassView />;
       case 'stationierung': return <StationierungView />;
       case 'rechnungen': return <RechnungenView />;

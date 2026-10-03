@@ -17,6 +17,7 @@
   --accent: var(--g-600);
   --warn: #b7791f;
   --danger: #b3261e;
+  --crit: #d9622b;
   --input-bg: #ffffff;
   --row-hover: #f6fbf5;
   --row-sel: #eef8ec;
@@ -186,6 +187,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   --warn: #e0b04a;
   --danger: #ff8a80;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.3);
+  --crit: #ff9a62;
   --input-bg: #101a0f;
   --row-hover: #1d2c1c;
   --row-sel: #243a22;

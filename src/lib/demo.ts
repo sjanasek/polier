@@ -3,6 +3,7 @@ import { neuesProjekt } from './defaults';
 import { uid } from './format';
 import type { Kunde } from '../types';
 import { kundeAdresse } from './kunden';
+import { bundesFeiertage, standardBauzeit, vorgaengeAusLV } from './bauzeit';
 
 export const DEMO_KUNDE_ID = 'kunde-demo-stadt';
 
@@ -147,5 +148,10 @@ export function demoProjekt(): Projekt {
     { id: uid(), lfdNr: 1, rechnungsNr: '2026-014-01', typ: 'abschlag', datum: '2026-08-31', stichtag: '2026-08-31', status: 'bezahlt', nachlassProzent: 2, sicherheitseinbehaltProzent: 5, skontoProzent: 2, skontoTage: 14, zahlungszielTage: 30, reverseCharge: false, sonstigeAbzuege: [], zahlungen: [{ id: uid(), datum: '2026-09-12', betrag: 38000, bemerkung: 'Überweisung Stadtkasse' }], snapshot: null, bemerkung: '' },
     { id: uid(), lfdNr: 2, rechnungsNr: '2026-014-02', typ: 'abschlag', datum: '2026-09-30', stichtag: '2026-09-30', status: 'entwurf', nachlassProzent: 2, sicherheitseinbehaltProzent: 5, skontoProzent: 2, skontoTage: 14, zahlungszielTage: 30, reverseCharge: false, sonstigeAbzuege: [], zahlungen: [], snapshot: null, bemerkung: '' },
   ];
+  const bz = standardBauzeit('2026-08-03');
+  bz.feiertage = bundesFeiertage(2026);
+  bz.vorgaenge = vorgaengeAusLV(p.lv, 'titel', true);
+  if (bz.vorgaenge[2]) bz.vorgaenge[2].verzug = -3; // Straßenbau beginnt, während der Kanal noch fertiggestellt wird
+  p.bauzeit = bz;
   return p;
 }
