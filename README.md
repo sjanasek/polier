@@ -39,7 +39,6 @@ Hinweis zur Nachkalkulation: Es gibt keine direkte Anbindung an BRZ Baulohn / BR
 - [Anwenderhandbuch](docs/anwenderhandbuch.md)
 - [Technische Dokumentation](docs/technische-dokumentation.md)
 - [Datenformat / API-Vorschlag (OpenAPI)](docs/openapi.yaml)
-- [Veröffentlichung auf STRATO-Webhosting](docs/veroeffentlichung-strato.md)
 
 ## Technik
 

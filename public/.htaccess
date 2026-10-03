@@ -1,4 +1,4 @@
-# Polier: static single page app on Apache web hosting (e.g. STRATO).
+# Polier: static single page app on Apache web hosting.
 # Copied into dist/ by the build. Upload it together with the other files (hidden file!).
 
 # Always use HTTPS
