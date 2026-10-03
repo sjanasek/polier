@@ -36,6 +36,7 @@ Hell- und Dunkelmodus (umschaltbar, optional automatisch nach Systemeinstellung)
 - [Anwenderhandbuch](docs/anwenderhandbuch.md)
 - [Technische Dokumentation](docs/technische-dokumentation.md)
 - [Datenformat / API-Vorschlag (OpenAPI)](docs/openapi.yaml)
+- [Veröffentlichung auf STRATO-Webhosting](docs/veroeffentlichung-strato.md)
 
 ## Technik
 

@@ -1,0 +1,30 @@
+# Polier: static single page app on Apache web hosting (e.g. STRATO).
+# Copied into dist/ by the build. Upload it together with the other files (hidden file!).
+
+# Always use HTTPS
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "same-origin"
+  # Business application: keep it out of search engines
+  Header set X-Robots-Tag "noindex, nofollow"
+  # index.html must always be revalidated so updates show up; build assets have hashed names
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType text/css .css
+</IfModule>
