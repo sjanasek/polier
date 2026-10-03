@@ -55,6 +55,10 @@ Links befindet sich die **Navigation** mit allen Modulen. Unten links wird das *
 | Drucken / Ausgabe | LV, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt als PDF |
 | Stammdaten | Eigene Firma, Geräte- und Materialpreise, Datensicherung |
 
+### Seitenleiste ein- und ausklappen
+
+Mit dem Pfeil-Knopf oben in der Seitenleiste (« bzw. ») lässt sich die Navigation zu einer schmalen Symbolleiste einklappen. So bleibt mehr Platz für Tabellen und Balkenplan, besonders auf dem iPad. In der schmalen Leiste zeigt das Antippen oder Überfahren eines Symbols den Namen des Moduls; unten wechselt ein Knopf die Darstellung (Hell, Dunkel, Auto). Der Zustand wird im Browser gemerkt. Auf schmalen Bildschirmen (unter 900 Pixel Breite) startet die Leiste beim ersten Mal eingeklappt.
+
 ### Hell- und Dunkelmodus
 
 Unten in der Seitenleiste wählen Sie die Darstellung: **Hell** (Standard), **Dunkel** oder **Auto**. Bei „Auto“ folgt Polier der Systemeinstellung des Geräts. Die Wahl wird im Browser gespeichert. Gedruckt wird immer hell, unabhängig vom gewählten Modus.

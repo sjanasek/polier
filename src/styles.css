@@ -56,7 +56,8 @@ small, .muted { color: var(--muted); }
 a { color: var(--link); }
 
 /* ---------- Layout ---------- */
-.app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%; }
+.app { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); height: 100%; transition: grid-template-columns 0.18s ease; }
+.app.collapsed { grid-template-columns: 60px minmax(0, 1fr); }
 .sidebar {
   background: linear-gradient(180deg, var(--g-100) 0%, var(--g-50) 100%);
   border-right: 1px solid var(--line);
@@ -73,7 +74,20 @@ a { color: var(--link); }
 }
 .nav-btn:hover { background: var(--g-200); }
 .nav-btn.active { background: var(--g-600); color: #fff; }
-.nav-btn .ico { width: 20px; text-align: center; opacity: 0.9; }
+.nav-btn .ico { width: 20px; text-align: center; opacity: 0.9; flex: none; }
+.brand .brand-text { flex: 1; min-width: 0; }
+.collapse-btn { border: 1px solid var(--line); background: var(--surface); color: var(--g-800); border-radius: 7px; width: 28px; height: 28px; font-size: 15px; line-height: 1; cursor: pointer; flex: none; }
+.collapse-btn:hover { background: var(--g-200); }
+.theme-mini, .projekt-mini { display: none; }
+.sidebar { overflow-y: auto; overflow-x: hidden; min-width: 0; }
+/* eingeklappte Seitenleiste: nur Symbole */
+.app.collapsed .sidebar { padding: 14px 6px; align-items: stretch; }
+.app.collapsed .brand { flex-direction: column; gap: 8px; padding: 4px 0 10px; }
+.app.collapsed .brand-text, .app.collapsed .nav-btn .lbl, .app.collapsed .theme-switch, .app.collapsed .projekt-chip { display: none; }
+.app.collapsed .nav-btn { justify-content: center; padding: 10px 0; }
+.app.collapsed .nav-btn .ico { width: auto; font-size: 17px; }
+.app.collapsed .theme-mini { display: block; border: 1px solid var(--line); background: var(--surface); color: var(--g-800); border-radius: 8px; padding: 7px 0; font-size: 15px; cursor: pointer; }
+.app.collapsed .projekt-mini { display: block; margin-top: 6px; font-size: 9px; text-align: center; color: var(--g-800); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-sep { height: 1px; background: var(--line); margin: 8px 4px; }
 .sidebar .projekt-chip { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; }
 .projekt-chip b { display: block; color: var(--g-800); font-size: 13px; }

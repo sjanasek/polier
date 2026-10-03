@@ -18,7 +18,7 @@ const NAV: { view: View; label: string; ico: string; needsProjekt?: boolean }[] 
   { view: 'kunden', label: 'Adressen / Kunden', ico: '☎' },
   { view: 'lv', label: 'Leistungsverzeichnis', ico: '≡', needsProjekt: true },
   { view: 'kalkulation', label: 'Kalkulation', ico: '∑', needsProjekt: true },
-  { view: 'bauzeit', label: 'Bauzeitenplan', ico: '⏱', needsProjekt: true },
+  { view: 'bauzeit', label: 'Bauzeitenplan', ico: '▬', needsProjekt: true },
   { view: 'aufmass', label: 'Aufmaß', ico: '∠', needsProjekt: true },
   { view: 'stationierung', label: 'Stationierung', ico: '⟷', needsProjekt: true },
   { view: 'rechnungen', label: 'Rechnungen', ico: '€', needsProjekt: true },
@@ -53,6 +53,20 @@ export default function App() {
   }, [theme]);
   const wechsleTheme = (m: ThemeMode) => { setTheme(m); saveTheme(m); };
 
+  // Seitenleiste einklappbar (Icon-Leiste), Zustand wird im Browser gemerkt
+  const [eingeklappt, setEingeklappt] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem('polier-sidebar');
+      if (v === '1' || v === '0') return v === '1';
+    } catch { /* Speicher nicht verfügbar */ }
+    return typeof window !== 'undefined' && window.innerWidth < 900;
+  });
+  const toggleSidebar = () => setEingeklappt(e => {
+    try { localStorage.setItem('polier-sidebar', e ? '0' : '1'); } catch { /* ignorieren */ }
+    return !e;
+  });
+  const naechstesTheme = () => wechsleTheme(theme === 'hell' ? 'dunkel' : theme === 'dunkel' ? 'auto' : 'hell');
+
   const renderBody = () => {
     if (view === 'projekte') return <ProjekteView />;
     if (view === 'kunden') return <KundenView />;
@@ -71,31 +85,38 @@ export default function App() {
   };
 
   return (
-    <div className="app">
-      <aside className="sidebar">
+    <div className={`app ${eingeklappt ? 'collapsed' : ''}`}>
+      <aside className="sidebar" aria-label="Navigation">
         <div className="brand">
           <div className="logo">P</div>
-          <div>
+          <div className="brand-text">
             <div className="title">Polier</div>
             <div className="sub">Bauabrechnung &amp; Kalkulation</div>
           </div>
+          <button className="collapse-btn" onClick={toggleSidebar} aria-expanded={!eingeklappt} aria-label={eingeklappt ? 'Seitenleiste ausklappen' : 'Seitenleiste einklappen'} title={eingeklappt ? 'Seitenleiste ausklappen' : 'Seitenleiste einklappen'}>
+            {eingeklappt ? '»' : '«'}
+          </button>
         </div>
         {NAV.map(n => (
-          <button key={n.view} className={`nav-btn ${view === n.view ? 'active' : ''}`} disabled={n.needsProjekt && !projekt} onClick={() => setView(n.view)}>
-            <span className="ico">{n.ico}</span>{n.label}
+          <button key={n.view} className={`nav-btn ${view === n.view ? 'active' : ''}`} disabled={n.needsProjekt && !projekt} onClick={() => setView(n.view)} title={n.label} aria-label={n.label}>
+            <span className="ico">{n.ico}</span><span className="lbl">{n.label}</span>
           </button>
         ))}
         <div className="nav-sep" />
-        <button className={`nav-btn ${view === 'stammdaten' ? 'active' : ''}`} onClick={() => setView('stammdaten')}>
-          <span className="ico">⚙</span>Stammdaten
+        <button className={`nav-btn ${view === 'stammdaten' ? 'active' : ''}`} onClick={() => setView('stammdaten')} title="Stammdaten" aria-label="Stammdaten">
+          <span className="ico">⚙</span><span className="lbl">Stammdaten</span>
         </button>
-        <div className="theme-switch" role="group" aria-label="Darstellung" style={{ marginTop: 'auto' }}>
+        <button className="theme-mini" style={{ marginTop: 'auto' }} onClick={naechstesTheme} title={`Darstellung: ${theme === 'hell' ? 'Hell' : theme === 'dunkel' ? 'Dunkel' : 'Auto'} (antippen zum Wechseln)`} aria-label="Darstellung wechseln">
+          {theme === 'hell' ? '☀' : theme === 'dunkel' ? '☾' : 'A'}
+        </button>
+        <div className="theme-switch" role="group" aria-label="Darstellung">
           {(['hell', 'dunkel', 'auto'] as ThemeMode[]).map(m => (
             <button key={m} className={theme === m ? 'active' : ''} onClick={() => wechsleTheme(m)} title={m === 'auto' ? 'Systemeinstellung verwenden' : `${m === 'hell' ? 'Heller' : 'Dunkler'} Modus`}>
               {m === 'hell' ? '☀ Hell' : m === 'dunkel' ? '☾ Dunkel' : 'Auto'}
             </button>
           ))}
         </div>
+        {projekt && <div className="projekt-mini" title={`${projekt.nummer} · ${projekt.bezeichnung}`}>{projekt.nummer}</div>}
         <div className="projekt-chip" style={{ marginTop: 6 }}>
           {projekt ? (
             <>
