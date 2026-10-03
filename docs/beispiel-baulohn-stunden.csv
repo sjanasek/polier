@@ -1,0 +1,16 @@
+﻿Personalnummer;Name;Datum;Kostenstelle;Lohnart;Stunden;Betrag EUR
+9001;Beispiel Mitarbeiter A;03.08.2026;4711-01;Normalstunden;8,00;382,40
+9002;Beispiel Mitarbeiter B;03.08.2026;4711-01;Normalstunden;8,00;382,40
+9001;Beispiel Mitarbeiter A;04.08.2026;4711-01;Normalstunden;8,00;382,40
+9001;Beispiel Mitarbeiter A;04.08.2026;4711-01;Überstunden;1,50;90,00
+9002;Beispiel Mitarbeiter B;04.08.2026;4711-01;Normalstunden;8,00;382,40
+9003;Beispiel Mitarbeiter C;05.08.2026;4711-90;Normalstunden;8,00;382,40
+9001;Beispiel Mitarbeiter A;05.10.2026;4711-02;Normalstunden;8,00;382,40
+9002;Beispiel Mitarbeiter B;05.10.2026;4711-02;Normalstunden;8,00;382,40
+9003;Beispiel Mitarbeiter C;05.10.2026;4711-02;Normalstunden;7,50;358,50
+9002;Beispiel Mitarbeiter B;06.10.2026;4711-02;Normalstunden;8,00;382,40
+9002;Beispiel Mitarbeiter B;06.10.2026;4711-02;Zuschlagsstunden Nacht;2,00;140,00
+9003;Beispiel Mitarbeiter C;06.10.2026;4711-03;Normalstunden;8,00;382,40
+9003;Beispiel Mitarbeiter C;07.10.2026;4711-03;Urlaub;8,00;382,40
+9001;Beispiel Mitarbeiter A;07.10.2026;4711-03;Krank;8,00;382,40
+9001;Beispiel Mitarbeiter A;08.10.2026;4711-03;Normalstunden;8,00;382,40

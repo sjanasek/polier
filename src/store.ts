@@ -4,12 +4,24 @@ import type { Kunde, Projekt, Stammdaten } from './types';
 import { neuesProjekt, standardStammdaten } from './lib/defaults';
 import { demoKunden, demoProjekt } from './lib/demo';
 import { kundeAdresse } from './lib/kunden';
+import { standardKontenRegeln } from './lib/brzImport';
 
-export type View = 'projekte' | 'kunden' | 'lv' | 'kalkulation' | 'bauzeit' | 'aufmass' | 'stationierung' | 'rechnungen' | 'druck' | 'stammdaten';
+export type View = 'projekte' | 'kunden' | 'lv' | 'kalkulation' | 'bauzeit' | 'aufmass' | 'stationierung' | 'rechnungen' | 'nachkalk' | 'druck' | 'stammdaten';
 
-export type DruckArt = 'lv' | 'angebot' | 'rechnung' | 'aufmass' | 'kalkulation' | 'bauzeit';
+export type DruckArt = 'lv' | 'angebot' | 'rechnung' | 'aufmass' | 'kalkulation' | 'bauzeit' | 'nachkalkulation';
 
-export interface DruckAuftrag { art: DruckArt; rechnungId?: string }
+export interface DruckAuftrag { art: DruckArt; rechnungId?: string; stichtag?: string | null }
+
+/** Ergänzt in Stammdaten älterer Speicherstände/Sicherungen die fehlenden Listen */
+export function stammdatenErgaenzen(s: Partial<Stammdaten> | undefined, basis: Stammdaten): Stammdaten {
+  return {
+    ...basis,
+    ...s,
+    kunden: s?.kunden ?? (s ? [] : basis.kunden),
+    importProfile: s?.importProfile ?? (s ? [] : basis.importProfile ?? []),
+    kontenRegeln: s?.kontenRegeln ?? (s ? standardKontenRegeln('skr03') : basis.kontenRegeln ?? standardKontenRegeln('skr03')),
+  };
+}
 
 interface State {
   projekte: Projekt[];
@@ -62,15 +74,16 @@ export const useStore = create<State>()(
       }),
       updateProjekt: (id, fn) => set(s => ({ projekte: s.projekte.map(p => (p.id === id ? fn(p) : p)) })),
       updateStammdaten: fn => set(s => ({ stammdaten: fn(s.stammdaten) })),
-      importAll: data => set({ projekte: data.projekte, stammdaten: { ...data.stammdaten, kunden: data.stammdaten.kunden ?? [] }, aktivId: data.projekte[0]?.id ?? null }),
+      importAll: data => set(s => ({ projekte: data.projekte, stammdaten: stammdatenErgaenzen(data.stammdaten, s.stammdaten), aktivId: data.projekte[0]?.id ?? null })),
     }),
     {
       name: 'polier-v1',
       partialize: s => ({ projekte: s.projekte, aktivId: s.aktivId, stammdaten: s.stammdaten }),
-      // Ältere Speicherstände kennen noch kein Adressbuch: Feld ergänzen (leer), alles andere bleibt.
+      // Ältere Speicherstände kennen noch kein Adressbuch bzw. keine Importprofile/Kontenregeln:
+      // Felder ergänzen, alles andere bleibt. Projekt.nachkalk ist optional (nachkalkVon liefert Standardwerte).
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
-        return { ...current, ...p, stammdaten: { ...current.stammdaten, ...p.stammdaten, kunden: p.stammdaten?.kunden ?? (p.stammdaten ? [] : current.stammdaten.kunden) } };
+        return { ...current, ...p, stammdaten: stammdatenErgaenzen(p.stammdaten, current.stammdaten) };
       },
     },
   ),

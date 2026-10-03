@@ -15,6 +15,7 @@ Das Programm läuft komplett im Browser. Alle Daten werden lokal auf dem Rechner
 5. [Aufmaß nach VOB/C](#5-aufmaß-nach-vobc)
 6. [Stationierungsaufmaß (Tiefbau)](#6-stationierungsaufmaß-tiefbau)
 7. [Rechnungen – kumulative Abrechnung](#7-rechnungen--kumulative-abrechnung)
+7a. [Nachkalkulation (Soll-Ist-Vergleich) mit Import aus Baulohn und FiBu](#7a-nachkalkulation-soll-ist-vergleich)
 8. [Drucken und Ausgabe](#8-drucken-und-ausgabe)
 9. [Stammdaten und Datensicherung](#9-stammdaten-und-datensicherung)
 10. [Typische Arbeitsabläufe](#10-typische-arbeitsabläufe)
@@ -52,8 +53,9 @@ Links befindet sich die **Navigation** mit allen Modulen. Unten links wird das *
 | Aufmaß | Aufmaßblätter mit REB-Formeln |
 | Stationierung | Streckenaufmaß mit Stationen und Querprofilen |
 | Rechnungen | Abschlags-, Teilschluss- und Schlussrechnungen, Zahlungen |
-| Drucken / Ausgabe | LV, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt als PDF |
-| Stammdaten | Eigene Firma, Geräte- und Materialpreise, Datensicherung |
+| Nachkalkulation | Soll-Ist-Vergleich mit importierten Stunden und Kosten, Hochrechnung, Erfahrungswerte |
+| Drucken / Ausgabe | LV, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt, Bauzeitenplan, Nachkalkulation als PDF |
+| Stammdaten | Eigene Firma, Geräte- und Materialpreise, Kontenzuordnung, Importprofile, Datensicherung |
 
 ### Seitenleiste ein- und ausklappen
 
@@ -361,6 +363,82 @@ Die Tabelle unten zeigt je Position die LV-Menge, die Menge der Vorrechnung, die
 
 ---
 
+## 7a. Nachkalkulation (Soll-Ist-Vergleich)
+
+Die Nachkalkulation stellt den **kalkulierten Aufwand (Soll)** dem **tatsächlichen Aufwand (Ist)** gegenüber. Das Soll stammt aus der Kalkulation des Projekts, das Ist aus Exporten der Lohnabrechnung (Arbeitszeiten je Kostenstelle, z. B. aus BRZ Baulohn) und der Finanzbuchhaltung (Kosten je Kostenstelle, z. B. aus BRZ Finanzbuchhaltung).
+
+**Wichtig – was Polier kann und was nicht:** Polier hat **keine direkte Verbindung** zu BRZ oder anderen Lohn- und Buchhaltungssystemen und ist dafür nicht zertifiziert. Die genauen Exportformate dieser Programme liegen nicht vor. Polier liest deshalb **beliebige CSV-Exporte** über eine Spaltenzuordnung ein, die Sie einmal einstellen und als Profil speichern. Sobald echte Beispielexporte vorliegen, kann ein fertiges Standardprofil ergänzt werden.
+
+### Grundprinzip
+
+- **Soll bezogen auf den Leistungsstand:** Es wird nicht die komplette LV-Menge bewertet, sondern die bis zum Stichtag aufgemessene Menge (Aufmaß und Stationierung, wie in der Rechnung). Soll-Stunden = Lohnansatz (h je Einheit) × aufgemessene Menge; Soll-Kosten je Kostenart = Ansatz × Menge. Baustellengemeinkosten (BGK) werden anteilig zum Leistungsgrad angesetzt.
+- **Ist:** Stunden (nach Stundenart) und Lohnkosten aus dem Baulohn-Import; Kosten je Kostenart (Stoffe, Geräte, Fremdleistung, Sonstiges, Gemeinkosten) aus dem FiBu-Import, jeweils bis zum Stichtag.
+- **Leistung:** aufgemessene Menge × Einheitspreis bis Stichtag (entspricht dem Leistungsstand einer Rechnung mit diesem Stichtag); Erlös = Leistung abzüglich Nachlass.
+- **Lohnkosten-Ist:** Enthält der FiBu-Import Lohnkonten, gelten diese. Sonst die Lohnkosten aus dem Baulohn-Export. Fehlen beide, werden die Ist-Stunden mit dem Kalkulationslohn bewertet und als **Schätzung** gekennzeichnet.
+
+### Schritt 1: Kostenstellen eintragen
+
+Reiter **Kostenstellen & Importe**: Die Kostenstellen-/Baustellennummern des Projekts so eintragen, wie sie im Export stehen (z. B. `4711`). Mehrere Nummern sind möglich (Hauptkostenstelle, Unterkostenstellen, Kostenträger).
+
+- **LV-Titel:** Wird eine Unterkostenstelle einem Titel zugeordnet, ist der Vergleich auch **je Titel** möglich (Reiter Soll-Ist, Tabelle „Vergleich je Titel“) und die Erfahrungswerte können titelweise zurückgeführt werden. Ohne Zuordnung wird projektweit verglichen.
+- **BGK:** Kostenstellen für Baustelleneinrichtung, Container o. Ä. als Gemeinkosten kennzeichnen; ihre Kosten erscheinen dann unter „Gemeinkosten (BGK)“ statt bei den Einzelkosten.
+- Ohne eingetragene Kostenstelle zählen alle importierten Zeilen; mit Eintrag werden Zeilen anderer Kostenstellen ignoriert und oben gemeldet. Nach einem Import können fehlende Kostenstellen per Klick angelegt werden.
+- **Ampelschwellen:** ab welcher Abweichung über Soll (in %) gelb bzw. rot angezeigt wird (Standard 5 % / 15 %).
+
+### Schritt 2: Export einlesen (Reiter Import)
+
+1. **Quelle** wählen: *Baulohn (Arbeitszeiten)* oder *Finanzbuchhaltung (Kosten)*.
+2. **CSV-Datei wählen** (jede Dateiendung ist erlaubt, auch auf dem iPad) oder den Export als Text in das Feld einfügen bzw. **Aus Zwischenablage** übernehmen. Kodierung (UTF-8 / Windows-1252) und Trennzeichen (Semikolon, Komma, Tabulator) werden automatisch erkannt und können umgestellt werden; die ersten Zeilen werden als Vorschau angezeigt. Zahlen im deutschen Format (`1.234,56`) und Datumsangaben als `tt.mm.jjjj` oder `jjjj-mm-tt` werden gelesen.
+3. **Spaltenzuordnung:** Für jedes Zielfeld die passende Spalte des Exports wählen. Polier macht anhand der Spaltenüberschriften einen Vorschlag. Pflichtfelder sind mit * gekennzeichnet.
+
+   | Baulohn (Arbeitszeiten) | FiBu (Kosten) |
+   |---|---|
+   | Datum *, Kostenstelle *, Stunden * | Buchungsdatum *, Kostenstelle *, Konto *, Betrag * |
+   | Lohnart/Stundenart (Normal, Überstunden, Zuschlag …) | Kontobezeichnung, Soll/Haben-Kennzeichen, Kostenart (Text) |
+   | Lohnkosten € (falls im Export) | Belegnummer, Buchungstext, Kostenträger |
+   | Mitarbeiter-Nr., Name, Kostenträger/Teilleistung | |
+
+   Bei FiBu-Exporten mit Soll/Haben-Kennzeichen gelten die unter „Haben-Kennzeichen“ eingetragenen Werte (Standard `H, Haben, C`) als Gutschrift/Storno und werden negativ gezählt. Ohne Kennzeichen gilt das Vorzeichen des Exports. Bei Baulohn-Exporten lassen sich Stundenarten wie `Urlaub, Krank` ausschließen.
+4. **Profil speichern:** Name vergeben und speichern. Beim nächsten Import dieser Quelle das Profil oben rechts wählen – die Zuordnung ist dann sofort da. Profile liegen in den Stammdaten.
+5. **Optionen:** *Ergänzen* überspringt Zeilen, die inhaltlich bereits vorhanden sind (Duplikatschutz, z. B. bei versehentlich doppeltem Import derselben Datei). *Ersetzen* löscht zuvor importierte Zeilen derselben Quelle im Zeitraum und für die Kostenstellen der Datei und übernimmt die Datei neu – richtig bei korrigierten Exporten oder überlappenden Zeiträumen.
+6. **Prüfen (Vorschau)** zeigt, wie viele Zeilen übernommen, übersprungen oder fehlerhaft sind (mit Zeilennummer und Grund), die Summe, den Zeitraum, unbekannte Kostenstellen und Konten ohne Regel. **Import übernehmen** speichert die Daten im Projekt.
+
+Jeder Import wird im **Importprotokoll** (Reiter Kostenstellen & Importe) mit Datei, Profil, Zeitraum, Kostenstellen, Zeilenzahlen und Fehlern festgehalten und kann dort samt seiner Zeilen wieder **gelöscht** werden.
+
+Beispiel-Exporte zum Ausprobieren liegen im Ordner `docs/`: `beispiel-baulohn-stunden.csv` (UTF-8, mit Personalnummern und Urlaubs-/Krankzeilen) und `beispiel-fibu-buchungen.csv` (Windows-1252, mit Soll/Haben-Kennzeichen und einem Konto ohne Regel).
+
+### Datenschutz (Baulohn)
+
+Lohndaten sind personenbezogen. Polier speichert beim Import **standardmäßig nur Summen** je Datum, Kostenstelle und Stundenart; Mitarbeiternummer und Name werden verworfen. Nur wenn der Schalter **„personenbezogen speichern“** bewusst aktiviert wird, bleiben diese Felder erhalten (im Protokoll gekennzeichnet). Alle Daten liegen ausschließlich lokal im Browser des Geräts; die **Sicherungsdatei enthält dann personenbezogene Daten** – Zugriffsschutz, Weitergabe und Aufbewahrungsfristen entsprechend behandeln. Nicht mehr benötigte Importe über das Protokoll löschen.
+
+### Kontenzuordnung (Stammdaten)
+
+Unter **Stammdaten → Kontenzuordnung** wird festgelegt, welche Konten des FiBu-Exports zu welcher Polier-Kostenart gehören (Lohn, Stoffe, Geräte, Fremdleistung, Sonstiges) und ob es sich um Gemeinkosten handelt. Eine Regel besteht aus einem Kontonummernbereich (von/bis) und/oder einem Textabgleich mit der Kostenart-Spalte des Exports; Regeln werden von oben nach unten geprüft. Die Schaltflächen **SKR03-Vorschlag** / **SKR04-Vorschlag** laden einen editierbaren Startsatz – ausdrücklich ohne Gewähr, maßgeblich ist der eigene Kontenplan. Konten ohne Regel werden unter „Sonstiges“ gezählt und in der Nachkalkulation aufgelistet; nach dem Anpassen der Regeln können die vorhandenen Buchungen mit **„Kosten nach aktuellen Regeln neu zuordnen“** ohne Neuimport umgestellt werden.
+
+### Reiter Soll-Ist-Vergleich
+
+Oben den **Stichtag** wählen (oder aus einer Rechnung übernehmen) und die Art der Hochrechnung. Angezeigt werden:
+
+- **Kennzahlen oben:** Leistung und Leistungsgrad, Soll-/Ist-Stunden, Soll-/Ist-Kosten, Ergebnis bis Stichtag.
+- **Vergleich je Kostenart** mit Abweichung absolut und in Prozent sowie Ampel; dazu Einzelkosten, Gemeinkosten, Kosten gesamt und Lohnstunden. „Nicht bewertbar“ bedeutet Soll = 0 (z. B. Fremdleistung angefallen, obwohl laut Aufmaß noch keine zugehörige Leistung erbracht wurde).
+- **Kennzahlen:** Ist-Mittellohn gegen Kalkulationslohn, Aufwandsfaktor (Ist ÷ Soll-Stunden), BGK-Satz und Zuschlag auf EKT jeweils Kalkulation gegen Ist, Ergebnis Soll/Ist.
+- **Hochrechnung bis Fertigstellung:** *Trend* teilt die bisherigen Ist-Kosten durch den Leistungsgrad; *Rest zu Plan* addiert zu den Ist-Kosten die noch nicht erbrachten Soll-Kosten der Kalkulation. Daraus voraussichtliche Kosten, voraussichtliches Ergebnis und Abweichung zum Plan-Ergebnis (AGK + W&G).
+- **Stunden nach Stundenart und Bauzeitenplan:** Anteil von Überstunden/Zuschlagsstunden; geplante Lohnstunden laut Bauzeitenplan bis zum Stichtag gegen Soll (Leistungsstand) und Ist.
+- **Vergleich je Titel** für Kostenstellen mit Titelzuordnung, mit Faktor Ist ÷ Soll.
+- **Konten ohne Regel** mit Beträgen.
+
+**CSV-Export** schreibt alle Vergleichswerte in eine Datei, **Drucken** öffnet die Druckfassung (Drucken / Ausgabe → Nachkalkulation).
+
+### Reiter Zeitverlauf
+
+Zwei Diagramme zeigen je Monatsende kumuliert: Lohnstunden Soll (Leistungsstand) / Ist / Plan (Bauzeitenplan) und Kosten Soll / Ist / Leistung. Darunter stehen die Werte als Tabelle.
+
+### Reiter Erfahrungswerte
+
+Hier können die Ist-Aufwandswerte in die Kalkulation zurückgeführt werden: Die Lohnansätze (Stunden je Einheit) werden mit dem Faktor Ist ÷ Soll-Stunden skaliert – je Titel (bei Titelzuordnung der Kostenstellen) oder projektweit. Für jeden Ansatz werden alter und neuer Wert angezeigt. Erst nach Auswahl der Bereiche, Klick auf **Ausgewählte Ansätze übernehmen** und Bestätigung werden die Ansätze geändert; Positionen mit „EP aus Kalkulation“ erhalten dadurch neue Einheitspreise. Vorher eine Sicherung exportieren, wenn die alten Werte erhalten bleiben sollen (etwa als Kopie des Projekts für das nächste Angebot).
+
+---
+
 ## 8. Drucken und Ausgabe
 
 **Drucken / Ausgabe** zeigt eine Druckvorschau im A4-Format. Auswahl:
@@ -372,6 +450,8 @@ Die Tabelle unten zeigt je Position die LV-Menge, die Menge der Vorrechnung, die
 | Rechnung | Kumulative Rechnung mit Leistungsstand je Position, Abzügen und Vorrechnungen |
 | Aufmaßblätter | Alle Aufmaßblätter und Stationierungen mit Formeln, Werten und Ergebnissen, Unterschriftsfelder |
 | Kalkulationsblatt | Schlussblatt und Positionsliste mit EKT je Kostenart (nur intern) |
+| Bauzeitenplan | Balkenplan und Vorgangsliste |
+| Nachkalkulation (Soll-Ist) | Vergleich je Kostenart mit Ampel, Kennzahlen, Hochrechnung, Stundenarten, Titelvergleich und Zeitverlauf zum wählbaren Stichtag (nur intern) |
 
 **Drucken / als PDF speichern** öffnet den Druckdialog des Browsers. Dort "Als PDF speichern" wählen. Absender- und Fußzeile stammen aus den Stammdaten (Firma, Bank, Steuernummer).
 
@@ -488,3 +568,9 @@ Das Aufmaßdatum liegt nach dem Stichtag der Rechnung, oder die Rechnung ist fes
 
 **Kann ich das LV als GAEB-Datei ausgeben?**
 Ja, im Modul Leistungsverzeichnis unten (siehe Abschnitt 3, „GAEB-Schnittstelle“).
+
+**Der BRZ-Export wird nicht erkannt.**
+Es gibt kein festes BRZ-Format in Polier. Datei im Import öffnen, bei Bedarf Kodierung/Trennzeichen umstellen, die Spalten den Zielfeldern zuordnen und als Profil speichern. Erscheinen Umlaute falsch, Kodierung auf Windows-1252 bzw. UTF-8 umstellen. Zeilen mit nicht lesbarem Datum oder Betrag werden mit Zeilennummer im Protokoll gemeldet.
+
+**In der Nachkalkulation ist alles 0 oder „nicht bewertbar“.**
+Entweder liegen bis zum Stichtag keine Aufmaße vor (dann ist das Soll 0), oder die importierten Zeilen gehören zu anderen Kostenstellen als im Projekt eingetragen. Hinweise oben in der Ansicht beachten.

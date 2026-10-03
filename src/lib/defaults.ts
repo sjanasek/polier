@@ -1,5 +1,6 @@
 import type { Adresse, Firma, KalkParameter, Position, Projekt, Rechnung, Stammdaten, Titel } from '../types';
 import { heute, uid } from './format';
+import { standardKontenRegeln } from './brzImport';
 
 export const leereAdresse = (): Adresse => ({ name: '', zusatz: '', strasse: '', plz: '', ort: '', telefon: '', email: '' });
 
@@ -101,4 +102,6 @@ export const standardStammdaten = (): Stammdaten => ({
     { id: uid(), bezeichnung: 'Betonbordstein 15/30', einheit: 'm', preis: 7.8 },
   ],
   einheiten: EINHEITEN,
+  importProfile: [],
+  kontenRegeln: standardKontenRegeln('skr03'),
 });

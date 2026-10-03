@@ -26,10 +26,13 @@ npm run build        # Produktions-Build nach dist/
 | Aufmaß | Aufmaßblätter mit Formelkatalog nach REB 23.003, freie Formeln, Faktor, Abzug, Mengenübersicht |
 | Stationierung | Stationen in km+m, Mittelwertverfahren (Gauß-Elling) für Länge, Fläche, Volumen |
 | Rechnungen | Kumulative Abschlags-/Teilschluss-/Schlussrechnung nach § 16 VOB/B, Sicherheitseinbehalt, § 13b, Festschreibung, Zahlungseingänge |
-| Drucken | LV ohne Preise, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt als PDF über den Browser |
+| Nachkalkulation | Soll-Ist-Vergleich: Soll aus der Kalkulation bezogen auf den Leistungsstand, Ist aus CSV-Importen der Lohnabrechnung (Stunden) und Finanzbuchhaltung (Kosten je Kostenstelle) mit konfigurierbarer Spaltenzuordnung und Kontenregeln; Kennzahlen, Ampel, Hochrechnung, Zeitverlauf, Rückführung von Erfahrungswerten |
+| Drucken | LV ohne Preise, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt, Bauzeitenplan, Nachkalkulation als PDF über den Browser |
 | GAEB | Export als GAEB DA XML 3.2 X83 (Ausschreibung) und X84 (Angebot), Import von X81–X86 ins LV |
 
 Hell- und Dunkelmodus (umschaltbar, optional automatisch nach Systemeinstellung).
+
+Hinweis zur Nachkalkulation: Es gibt keine direkte Anbindung an BRZ Baulohn / BRZ Finanzbuchhaltung und keine Zertifizierung. Der Import liest generische CSV-Exporte; die Spaltenzuordnung wird einmal eingestellt und als Profil gespeichert. Beispieldateien zum Testen: `docs/beispiel-baulohn-stunden.csv`, `docs/beispiel-fibu-buchungen.csv`.
 
 ## Dokumentation
 

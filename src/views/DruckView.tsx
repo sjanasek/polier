@@ -8,6 +8,8 @@ import { formelByNr, parameterShortName } from '../lib/formulas';
 import { Gantt } from '../components/Gantt';
 import { bauzeitVon, planen } from '../lib/bauzeit';
 import { stationsAbschnitte, stationierungSumme } from '../lib/station';
+import { SollIstChart } from '../components/SollIstChart';
+import { HOCHRECHNUNGS_ARTEN, nachkalkulation, type Ampel } from '../lib/nachkalkulation';
 
 const ARTEN: { art: DruckArt; label: string }[] = [
   { art: 'lv', label: 'LV / Ausschreibung (ohne Preise)' },
@@ -16,6 +18,7 @@ const ARTEN: { art: DruckArt; label: string }[] = [
   { art: 'aufmass', label: 'Aufmaßblätter' },
   { art: 'kalkulation', label: 'Kalkulationsblatt' },
   { art: 'bauzeit', label: 'Bauzeitenplan' },
+  { art: 'nachkalkulation', label: 'Nachkalkulation (Soll-Ist)' },
 ];
 
 const TYPEN = { abschlag: 'Abschlagsrechnung', teilschluss: 'Teilschlussrechnung', schluss: 'Schlussrechnung' };
@@ -55,6 +58,12 @@ export function DruckView() {
               {rechnungen.map(r => <option key={r.id} value={r.id}>{r.lfdNr}. {TYPEN[r.typ]} {r.rechnungsNr}</option>)}
             </select>
           )}
+          {art === 'nachkalkulation' && (
+            <>
+              <span className="muted">Stichtag</span>
+              <input type="date" value={druck?.stichtag ?? ''} onChange={e => setDruck({ art, stichtag: e.target.value || null })} style={{ width: 170 }} />
+            </>
+          )}
           <span className="spacer" />
           <button className="btn" onClick={() => window.print()}>Drucken / als PDF speichern</button>
         </div>
@@ -67,6 +76,7 @@ export function DruckView() {
         {art === 'aufmass' && <AufmassDruck projekt={projekt} />}
         {art === 'kalkulation' && <KalkDruck projekt={projekt} erg={erg} />}
         {art === 'bauzeit' && <BauzeitDruck projekt={projekt} />}
+        {art === 'nachkalkulation' && <NachkalkDruck projekt={projekt} stichtag={druck?.stichtag ?? null} />}
         <div className="fuss">
           {firma.name}{firma.inhaber && ` · ${firma.inhaber}`} · {firma.strasse}, {firma.plz} {firma.ort}{firma.telefon && ` · Tel. ${firma.telefon}`}{firma.email && ` · ${firma.email}`}
           {firma.bank && <><br />{firma.bank} · IBAN {firma.iban} · BIC {firma.bic}</>}
@@ -301,6 +311,80 @@ function KalkDruck({ projekt, erg }: { projekt: Projekt; erg: KalkErgebnis }) {
           ])}
         </tbody>
       </table>
+    </>
+  );
+}
+
+const AMPEL_DRUCK: Record<Ampel, string> = { gruen: 'ok', gelb: 'Achtung', rot: 'kritisch', grau: '–' };
+
+function NachkalkDruck({ projekt, stichtag }: { projekt: Projekt; stichtag: string | null }) {
+  const e = nachkalkulation(projekt, { stichtag, hochrechnung: 'trend' });
+  const p = (v: number | null) => (v == null ? '–' : `${v > 0 ? '+' : ''}${numFlex(Math.round(v * 10) / 10)} %`);
+  const zeile = (v: typeof e.vergleichEkt, cls?: string, einheit = '') => (
+    <tr key={v.bezeichnung} className={cls}><td>{v.bezeichnung}</td><td className="num">{num2(v.soll)}{einheit}</td><td className="num">{num2(v.ist)}{einheit}</td><td className="num">{v.abweichung > 0 ? '+' : ''}{num2(v.abweichung)}{einheit}</td><td className="num">{p(v.prozent)}</td><td><span className={`ampel ${v.ampel}`}>{AMPEL_DRUCK[v.ampel]}</span></td></tr>
+  );
+  return (
+    <>
+      <h1>Nachkalkulation – Soll-Ist-Vergleich</h1>
+      <div><b>{projekt.bauvorhaben || projekt.bezeichnung}</b> · Projekt-Nr. {projekt.nummer} · AG: {projekt.auftraggeber.name} · Stichtag {stichtag ? datumDe(stichtag) : 'alle Daten'} · Kostenstellen {e.kostenstellen.join(', ') || '–'}</div>
+      <div className="text">
+        Leistung netto {eur(e.leistung)} · Leistungsgrad {e.leistungsgrad == null ? '–' : pct(Math.round(e.leistungsgrad * 1000) / 10)} · Auftragssumme netto {eur(e.auftragssumme)}<br />
+        Soll bezogen auf den Leistungsstand (Kalkulationsansätze × aufgemessene Menge bis Stichtag), Soll-BGK anteilig zum Leistungsgrad. Lohn-Ist: {e.lohnQuelle === 'fibu' ? 'Lohnkonten der FiBu' : e.lohnQuelle === 'export' ? 'Lohnkosten laut Baulohn-Export' : e.lohnQuelle === 'geschaetzt' ? 'Schätzung Stunden × Kalkulationslohn' : 'keine'}.
+      </div>
+      <h2>Kosten je Kostenart</h2>
+      <table>
+        <thead><tr><th>Kostenart</th><th className="num">Soll €</th><th className="num">Ist €</th><th className="num">Abweichung €</th><th className="num">%</th><th>Status</th></tr></thead>
+        <tbody>
+          {e.vergleich.map(v => zeile(v))}
+          {zeile(e.vergleichEkt, 'sum')}
+          {zeile(e.vergleichBgk)}
+          {zeile(e.vergleichGesamt, 'sum')}
+          {zeile(e.vergleichStunden, undefined, ' h')}
+        </tbody>
+      </table>
+      <h2>Kennzahlen und Hochrechnung</h2>
+      <table className="summen" style={{ width: '80%', marginLeft: 0 }}>
+        <tbody>
+          <tr><td>Mittellohn Kalkulation / Ist</td><td className="num">{num2(e.mittellohnSoll)} €/h</td><td className="num">{e.mittellohnIst == null ? '–' : `${num2(e.mittellohnIst)} €/h`}</td></tr>
+          <tr><td>Aufwand gesamt (Ist ÷ Soll-Stunden)</td><td className="num">1,00</td><td className="num">{e.sollStunden > 0 && e.istStunden > 0 ? num2(e.istStunden / e.sollStunden) : '–'}</td></tr>
+          <tr><td>BGK-Satz Kalkulation / Ist</td><td className="num">{e.bgkSatzSoll == null ? '–' : pct(Math.round(e.bgkSatzSoll * 10) / 10)}</td><td className="num">{e.bgkSatzIst == null ? '–' : pct(Math.round(e.bgkSatzIst * 10) / 10)}</td></tr>
+          <tr><td>Zuschlag auf EKT Kalkulation / Ist</td><td className="num">{e.zuschlagSoll == null ? '–' : pct(Math.round(e.zuschlagSoll * 10) / 10)}</td><td className="num">{e.zuschlagIst == null ? '–' : pct(Math.round(e.zuschlagIst * 10) / 10)}</td></tr>
+          <tr><td>Erlös bis Stichtag (nach Nachlass)</td><td className="num"></td><td className="num">{num2(e.erloes)}</td></tr>
+          <tr className="sum"><td>Ergebnis bis Stichtag Soll / Ist</td><td className="num">{num2(e.ergebnisSoll)}</td><td className="num">{num2(e.ergebnisIst)}</td></tr>
+          <tr><td>Kosten bei Fertigstellung Plan / Prognose ({HOCHRECHNUNGS_ARTEN.trend})</td><td className="num">{num2(e.hochrechnung.planKosten)}</td><td className="num">{e.hochrechnung.prognoseKosten == null ? '–' : num2(e.hochrechnung.prognoseKosten)}</td></tr>
+          <tr className="total"><td>Ergebnis bei Fertigstellung Plan / Prognose</td><td className="num">{num2(e.hochrechnung.planErgebnis)}</td><td className="num">{e.hochrechnung.prognoseErgebnis == null ? '–' : num2(e.hochrechnung.prognoseErgebnis)}</td></tr>
+          {e.bauzeit.verfuegbar && <tr><td>Lohnstunden laut Bauzeitenplan bis Stichtag / Ist</td><td className="num">{num2(e.bauzeit.planStundenBisStichtag)} h</td><td className="num">{num2(e.istStunden)} h</td></tr>}
+        </tbody>
+      </table>
+      {e.stundenNachArt.length > 0 && (
+        <>
+          <h2>Stunden nach Stundenart</h2>
+          <table>
+            <thead><tr><th>Stundenart</th><th className="num">Stunden</th><th className="num">Lohnkosten €</th></tr></thead>
+            <tbody>{e.stundenNachArt.map(a => <tr key={a.stundenart}><td>{a.stundenart}</td><td className="num">{num2(a.stunden)}</td><td className="num">{a.lohnkosten == null ? '–' : num2(a.lohnkosten)}</td></tr>)}</tbody>
+          </table>
+        </>
+      )}
+      {e.titel.length > 0 && (
+        <>
+          <h2>Vergleich je Titel</h2>
+          <table>
+            <thead><tr><th>Titel</th><th>Kostenstellen</th><th className="num">Soll h</th><th className="num">Ist h</th><th className="num">Faktor</th><th className="num">Soll EKT €</th><th className="num">Ist EKT €</th></tr></thead>
+            <tbody>
+              {e.titel.map(t => <tr key={t.titel.id}><td>{t.titel.oz} {t.titel.bezeichnung}</td><td>{t.kostenstellen.join(', ')}</td><td className="num">{num2(t.sollStunden)}</td><td className="num">{num2(t.istStunden)}</td><td className="num">{t.aufwandFaktor == null ? '–' : num2(t.aufwandFaktor)}</td><td className="num">{num2(KOSTENART_LISTE.reduce((a, k) => a + t.sollKosten[k], 0))}</td><td className="num">{num2(KOSTENART_LISTE.reduce((a, k) => a + t.istKosten[k], 0))}</td></tr>)}
+            </tbody>
+          </table>
+        </>
+      )}
+      {e.verlauf.length > 0 && (
+        <>
+          <h2>Zeitverlauf kumuliert</h2>
+          <SollIstChart punkte={e.verlauf} modus="stunden" print hoehe={200} />
+          <SollIstChart punkte={e.verlauf} modus="kosten" print hoehe={200} />
+        </>
+      )}
+      {e.nichtZugeordneteKonten.length > 0 && <div className="text"><small>Konten ohne Kontenregel (als Sonstiges gezählt): {e.nichtZugeordneteKonten.map(k => `${k.konto} ${k.bezeichnung} ${num2(k.betrag)} €`).join('; ')}</small></div>}
+      <div className="text"><small>Importierte Ist-Daten stammen aus CSV-Exporten der Lohnabrechnung und Finanzbuchhaltung (Spaltenzuordnung konfigurierbar). Nur zur internen Verwendung.</small></div>
     </>
   );
 }

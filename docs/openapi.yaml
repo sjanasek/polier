@@ -268,6 +268,145 @@ components:
         einheiten:
           type: array
           items: { type: string }
+        importProfile:
+          type: array
+          description: Spaltenzuordnungen für den Import (fehlt in älteren Sicherungen)
+          items: { $ref: '#/components/schemas/ImportProfil' }
+        kontenRegeln:
+          type: array
+          description: Kontenzuordnung Konto → Kostenart (fehlt in älteren Sicherungen; dann SKR03-Vorschlag)
+          items: { $ref: '#/components/schemas/KontenRegel' }
+
+    ImportQuelle:
+      type: string
+      enum: [baulohn, fibu]
+      description: baulohn = Arbeitszeiten aus der Lohnabrechnung, fibu = Kosten aus der Finanzbuchhaltung
+
+    ImportProfil:
+      type: object
+      required: [id, name, quelle, zuordnung, habenWerte, ausgeschlosseneStundenarten]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        quelle: { $ref: '#/components/schemas/ImportQuelle' }
+        zuordnung:
+          type: object
+          description: 'Zielfeld → Spaltenüberschrift im Export. Zielfelder Baulohn: datum, kostenstelle, stunden, stundenart, lohnkosten, mitarbeiterNr, mitarbeiterName, kostentraeger. FiBu: datum, kostenstelle, konto, kontoBezeichnung, betrag, sollHaben, kostenartText, belegNr, buchungstext, kostentraeger'
+          additionalProperties: { type: string }
+        habenWerte: { type: string, description: 'Werte der Soll/Haben-Spalte, die als Haben gelten (Komma-getrennt)' }
+        ausgeschlosseneStundenarten: { type: string, description: 'Stundenarten, die nicht gezählt werden (Komma-getrennt)' }
+
+    KontenRegel:
+      type: object
+      required: [id, vonKonto, bisKonto, kostenartText, kostenart, gemeinkosten, bezeichnung]
+      properties:
+        id: { type: string }
+        vonKonto: { type: string, description: 'leer = kein Bereich' }
+        bisKonto: { type: string, description: 'leer = nur vonKonto' }
+        kostenartText: { type: string, description: 'Teilstring der Kostenart-Spalte; leer = kein Textabgleich' }
+        kostenart: { $ref: '#/components/schemas/Kostenart' }
+        gemeinkosten: { type: boolean, description: 'Kosten als BGK statt EKT zählen' }
+        bezeichnung: { type: string }
+
+    Kostenstelle:
+      type: object
+      required: [id, nummer, bezeichnung, titelId, gemeinkosten]
+      properties:
+        id: { type: string }
+        nummer: { type: string, description: 'Kostenstellen-/Baustellennummer wie im Export' }
+        bezeichnung: { type: string }
+        titelId: { type: [string, 'null'], description: 'LV-Titel für den Vergleich je Titel; null = projektweit' }
+        gemeinkosten: { type: boolean }
+
+    StundenZeile:
+      type: object
+      required: [id, importId, datum, kostenstelle, stundenart, stunden, lohnkosten, mitarbeiterNr, mitarbeiterName, kostentraeger, hash]
+      properties:
+        id: { type: string }
+        importId: { type: string }
+        datum: { type: string, format: date }
+        kostenstelle: { type: string }
+        stundenart: { type: string }
+        stunden: { type: number }
+        lohnkosten: { type: [number, 'null'], description: 'null = nicht im Export enthalten' }
+        mitarbeiterNr: { type: string, description: 'nur bei personenbezogener Speicherung gefüllt' }
+        mitarbeiterName: { type: string, description: 'nur bei personenbezogener Speicherung gefüllt' }
+        kostentraeger: { type: string }
+        hash: { type: string, description: 'Prüfsumme für den Duplikatschutz' }
+
+    KostenZeile:
+      type: object
+      required: [id, importId, datum, kostenstelle, konto, kontoBezeichnung, betrag, kostenart, zugeordnet, gemeinkosten, kostenartText, belegNr, buchungstext, kostentraeger, hash]
+      properties:
+        id: { type: string }
+        importId: { type: string }
+        datum: { type: string, format: date }
+        kostenstelle: { type: string }
+        konto: { type: string }
+        kontoBezeichnung: { type: string }
+        betrag: { type: number, description: 'positiv = Kosten, negativ = Gutschrift/Storno' }
+        kostenart: { $ref: '#/components/schemas/Kostenart' }
+        zugeordnet: { type: boolean, description: 'false = keine Regel, Rückfall auf sonstiges' }
+        gemeinkosten: { type: boolean }
+        kostenartText: { type: string }
+        belegNr: { type: string }
+        buchungstext: { type: string }
+        kostentraeger: { type: string }
+        hash: { type: string }
+
+    ImportProtokoll:
+      type: object
+      required: [id, quelle, datei, importiertAm, profilName, zeilenGelesen, uebernommen, uebersprungen, ersetzt, fehler, personenbezogen, von, bis, kostenstellen, nichtZugeordneteKonten]
+      properties:
+        id: { type: string }
+        quelle: { $ref: '#/components/schemas/ImportQuelle' }
+        datei: { type: string }
+        importiertAm: { type: string, format: date-time }
+        profilName: { type: string }
+        zeilenGelesen: { type: integer }
+        uebernommen: { type: integer }
+        uebersprungen: { type: integer }
+        ersetzt: { type: integer }
+        fehler:
+          type: array
+          items:
+            type: object
+            required: [zeile, text]
+            properties:
+              zeile: { type: integer, description: 'Zeilennummer in der Datei (Kopfzeile = 1); 0 = allgemein' }
+              text: { type: string }
+        personenbezogen: { type: boolean }
+        von: { type: string, format: date }
+        bis: { type: string, format: date }
+        kostenstellen:
+          type: array
+          items: { type: string }
+        nichtZugeordneteKonten:
+          type: array
+          items: { type: string }
+
+    Nachkalkulation:
+      type: object
+      required: [kostenstellen, stunden, kosten, importe, schwellen]
+      properties:
+        kostenstellen:
+          type: array
+          items: { $ref: '#/components/schemas/Kostenstelle' }
+        stunden:
+          type: array
+          items: { $ref: '#/components/schemas/StundenZeile' }
+        kosten:
+          type: array
+          items: { $ref: '#/components/schemas/KostenZeile' }
+        importe:
+          type: array
+          items: { $ref: '#/components/schemas/ImportProtokoll' }
+        schwellen:
+          type: object
+          required: [gelb, rot]
+          properties:
+            gelb: { type: number, description: 'Abweichung über Soll in %' }
+            rot: { type: number }
 
     Kostenart:
       type: string
@@ -454,6 +593,9 @@ components:
       properties:
         id: { type: string }
         kundeId: { type: [string, 'null'], description: 'Verknüpfung zum Adressbuch; auftraggeber ist eine Kopie' }
+        nachkalk:
+          $ref: '#/components/schemas/Nachkalkulation'
+          description: Nachkalkulation mit importierten Ist-Daten (optional, fehlt in älteren Projekten)
         nummer: { type: string }
         bezeichnung: { type: string }
         art: { type: string, enum: [angebot, ausschreibung, auftrag] }

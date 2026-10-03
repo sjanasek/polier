@@ -1,0 +1,10 @@
+Buchungsdatum;Kostenstelle;Konto;Kontobezeichnung;Betrag;S/H;Belegnummer;Buchungstext;Kostenart
+05.10.2026;4711-02;3000;Roh-, Hilfs- und Betriebsstoffe;1.250,00;S;ER-2026-1005;Beispiel: Bettungssand 0/2;Material
+06.10.2026;4711-02;3000;Roh-, Hilfs- und Betriebsstoffe;2.760,00;S;ER-2026-1012;Beispiel: Schachtfertigteile 2 St;Material
+07.10.2026;4711-02;3000;Roh-, Hilfs- und Betriebsstoffe;120,00;H;GS-2026-0020;Beispiel: Gutschrift Rücknahme Formstücke;Material
+08.10.2026;4711;4810;Mietgeräte;1.980,00;S;ER-2026-1020;Beispiel: Bagger 14 t Miete 1. Oktoberhälfte;Geräte
+08.10.2026;4711;4530;Laufende Kfz-Betriebskosten;410,50;S;ER-2026-1021;Beispiel: LKW Kraftstoff;Fahrzeug
+09.10.2026;4711-03;3100;Fremdleistungen;8.350,00;S;ER-2026-1030;Beispiel: NU Asphaltbau Abschlag 1;Nachunternehmer
+09.10.2026;4711-90;4210;Miete Container;600,00;S;ER-2026-1031;Beispiel: Containermiete Oktober;Gemeinkosten
+10.10.2026;4711;2300;Sonstige Aufwendungen;95,00;S;ER-2026-1040;Beispiel: Konto ohne Regel  Straße gesperrt, Umleitung;Sonstiges
+10.10.2026;4711-01;3990;Entsorgung;1.480,00;S;ER-2026-1041;Beispiel: Deponiegebühren Z0;Entsorgung

@@ -271,10 +271,146 @@ export interface Bauzeitenplan {
   vorgaenge: Vorgang[];
 }
 
+// ---------------------------------------------------------------------------
+// Nachkalkulation (Soll-Ist-Vergleich) mit importierten Ist-Daten
+// ---------------------------------------------------------------------------
+
+/** Herkunft eines Imports: Lohnabrechnung (Arbeitszeiten) oder Finanzbuchhaltung (Kosten) */
+export type ImportQuelle = 'baulohn' | 'fibu';
+
+export const IMPORT_QUELLEN: Record<ImportQuelle, string> = {
+  baulohn: 'Baulohn (Arbeitszeiten)',
+  fibu: 'Finanzbuchhaltung (Kosten)',
+};
+
+/** Kostenstelle / Baustellennummer des externen Systems, die zu diesem Projekt gehört */
+export interface Kostenstelle {
+  id: ID;
+  /** Nummer, wie sie im Export steht (z. B. 4711 oder 4711-02) */
+  nummer: string;
+  bezeichnung: string;
+  /** Optional: LV-Titel, dem die (Unter-)Kostenstelle bzw. der Kostenträger zugeordnet ist; null = projektweit */
+  titelId: ID | null;
+  /** Kosten dieser Kostenstelle sind Gemeinkosten (BGK), keine Einzelkosten */
+  gemeinkosten: boolean;
+}
+
+/** Importierte Arbeitszeit (aggregiert oder personenbezogen) */
+export interface StundenZeile {
+  id: ID;
+  importId: ID;
+  datum: string; // ISO yyyy-mm-dd
+  kostenstelle: string;
+  /** Stunden-/Lohnart aus dem Export (z. B. Normal, Überstunden); leer = unbekannt */
+  stundenart: string;
+  stunden: number;
+  /** Lohnkosten in € laut Export; null = nicht im Export enthalten */
+  lohnkosten: number | null;
+  /** Nur bei personenbezogener Speicherung gefüllt */
+  mitarbeiterNr: string;
+  mitarbeiterName: string;
+  kostentraeger: string;
+  /** Prüfsumme für den Duplikatschutz */
+  hash: string;
+}
+
+/** Importierte Buchung der Finanzbuchhaltung */
+export interface KostenZeile {
+  id: ID;
+  importId: ID;
+  datum: string;
+  kostenstelle: string;
+  konto: string;
+  kontoBezeichnung: string;
+  /** Betrag netto in €; positiv = Kosten, negativ = Gutschrift/Storno */
+  betrag: number;
+  /** Zugeordnete Polier-Kostenart (nicht zugeordnete Konten → sonstiges) */
+  kostenart: Kostenart;
+  /** Konto wurde über eine Regel zugeordnet (false = Rückfall auf "sonstiges") */
+  zugeordnet: boolean;
+  /** Gemeinkosten laut Kontenregel */
+  gemeinkosten: boolean;
+  /** Kostenart-Spalte aus dem Export (Originaltext) */
+  kostenartText: string;
+  belegNr: string;
+  buchungstext: string;
+  kostentraeger: string;
+  hash: string;
+}
+
+export interface ImportFehler {
+  zeile: number;
+  text: string;
+}
+
+/** Protokoll eines Imports (Datei oder Zwischenablage) */
+export interface ImportProtokoll {
+  id: ID;
+  quelle: ImportQuelle;
+  datei: string;
+  /** Zeitpunkt des Imports (ISO-Zeitstempel) */
+  importiertAm: string;
+  profilName: string;
+  zeilenGelesen: number;
+  uebernommen: number;
+  uebersprungen: number;
+  /** Beim Import ersetzte (gelöschte) Zeilen früherer Importe */
+  ersetzt: number;
+  fehler: ImportFehler[];
+  personenbezogen: boolean;
+  von: string;
+  bis: string;
+  kostenstellen: string[];
+  /** Konten, die keiner Regel entsprachen (nur FiBu) */
+  nichtZugeordneteKonten: string[];
+}
+
+/** Ampelschwellen für die Abweichung Ist gegenüber Soll in % */
+export interface AmpelSchwellen {
+  gelb: number;
+  rot: number;
+}
+
+export interface Nachkalkulation {
+  kostenstellen: Kostenstelle[];
+  stunden: StundenZeile[];
+  kosten: KostenZeile[];
+  importe: ImportProtokoll[];
+  schwellen: AmpelSchwellen;
+}
+
+/** Gespeicherte Spaltenzuordnung für einen Export (Stammdaten) */
+export interface ImportProfil {
+  id: ID;
+  name: string;
+  quelle: ImportQuelle;
+  /** Zielfeld → Spaltenüberschrift im Export */
+  zuordnung: Record<string, string>;
+  /** Werte der Soll/Haben-Spalte, die als Haben (Gutschrift) gelten; Komma-getrennt, z. B. "H, Haben" */
+  habenWerte: string;
+  /** Stundenarten, die in der Summe der Lohnstunden nicht mitzählen (z. B. Urlaub, Krank); Komma-getrennt */
+  ausgeschlosseneStundenarten: string;
+}
+
+/** Regel: Kontonummernbereich und/oder Kostenart-Text → Polier-Kostenart */
+export interface KontenRegel {
+  id: ID;
+  /** Kontonummer von (leer = kein Bereich) */
+  vonKonto: string;
+  bisKonto: string;
+  /** Text der Kostenart-Spalte (Teilstring, Groß-/Kleinschreibung egal); leer = kein Textabgleich */
+  kostenartText: string;
+  kostenart: Kostenart;
+  gemeinkosten: boolean;
+  bezeichnung: string;
+}
+
 export interface Projekt {
   id: ID;
   /** Bauzeitenplan (optional; wird beim ersten Öffnen angelegt) */
   bauzeit?: Bauzeitenplan;
+  /** Nachkalkulation: Kostenstellen, importierte Ist-Daten, Importprotokolle (optional) */
+  nachkalk?: Nachkalkulation;
   /** Verknüpfung zum Adressbuch (optional). Die Adresse unter auftraggeber ist eine Kopie. */
   kundeId?: ID | null;
   nummer: string;
@@ -336,4 +472,8 @@ export interface Stammdaten {
   geraete: GeraetStamm[];
   material: MaterialStamm[];
   einheiten: string[];
+  /** Spaltenzuordnungen für Importe (fehlt in älteren Speicherständen) */
+  importProfile?: ImportProfil[];
+  /** Kontenzuordnung zu Kostenarten (fehlt in älteren Speicherständen) */
+  kontenRegeln?: KontenRegel[];
 }

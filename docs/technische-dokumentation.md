@@ -36,6 +36,7 @@ polier/
     ├── types.ts                Domänenmodell (alle Interfaces und Enums)
     ├── components/
     │   ├── Gantt.tsx           SVG-Balkenplan (Bildschirm und Druck)
+    │   ├── SollIstChart.tsx    SVG-Liniendiagramm Soll/Ist/Plan kumuliert (Bildschirm und Druck)
     │   └── ui.tsx              NumberInput (de-DE), Field, Card, KPI, …
     ├── lib/
     │   ├── calc.ts             Rechenkern: Kalkulation, LV-Summen, Aufmaß, Rechnungen
@@ -45,10 +46,13 @@ polier/
 │   ├── bauzeit.ts          Bauzeitenplan: Zeitaufwand aus Kalkulation, Terminrechnung, Kalender
 │   ├── kunden.ts           Adressbuch-Logik (Kundennummern, Adresskopie, Kunden aus Projekten)
 │   ├── gaeb.ts             GAEB DA XML 3.2 Export (X83/X84) und Import (X81–X86)
+│   ├── csv.ts              CSV-Parser (Trennzeichen, Anführungszeichen, Kodierung, Zahlen, Datum)
+│   ├── brzImport.ts        Generischer Import Baulohn/FiBu: Zielfelder, Spaltenvorschlag, Kontenregeln, Duplikate
+│   ├── nachkalkulation.ts  Soll-Ist-Vergleich, Kennzahlen, Hochrechnung, Zeitverlauf, Erfahrungswerte, CSV
     │   ├── format.ts           Zahlen-/Datums-/Stationsformatierung, uid()
     │   ├── defaults.ts         Fabriken für neue Objekte, Standardparameter
-    │   ├── demo.ts             Beispielprojekt
-    │   └── __tests__/          calc.test.ts, gaeb.test.ts (jsdom)
+    │   ├── demo.ts             Beispielprojekt inkl. Beispiel-Importen für die Nachkalkulation
+    │   └── __tests__/          calc, gaeb (jsdom), bauzeit, kunden, csv, brzImport, nachkalkulation
     └── views/
         ├── ProjekteView.tsx
         ├── KundenView.tsx
@@ -58,8 +62,10 @@ polier/
         ├── AufmassView.tsx
         ├── StationierungView.tsx
         ├── RechnungenView.tsx
+        ├── NachkalkView.tsx    Soll-Ist, Zeitverlauf, Import-Assistent, Kostenstellen/Protokoll, Erfahrungswerte
         ├── DruckView.tsx
-        └── StammdatenView.tsx
+        └── StammdatenView.tsx  inkl. Kontenregeln und Importprofile
+docs/beispiel-baulohn-stunden.csv, docs/beispiel-fibu-buchungen.csv   Testdateien für den Import
 ```
 
 Architekturprinzip: **Die Views enthalten keine Fachlogik.** Alle Berechnungen liegen in `src/lib/` als reine Funktionen über dem Datenmodell und sind ohne DOM testbar. Views lesen den Store, rufen Rechenfunktionen auf und schreiben Änderungen immutable zurück.
@@ -81,6 +87,15 @@ Node 18 oder neuer wird vorausgesetzt.
 ```
 Projekt
 ├── bauzeit?: Bauzeitenplan
+├── nachkalk?: Nachkalkulation (optional; nachkalkVon() liefert Standardwerte)
+│   ├── kostenstellen: Kostenstelle[] { nummer, bezeichnung, titelId | null, gemeinkosten }
+│   ├── stunden: StundenZeile[] { importId, datum, kostenstelle, stundenart, stunden, lohnkosten | null,
+│   │                             mitarbeiterNr, mitarbeiterName (nur personenbezogen), kostentraeger, hash }
+│   ├── kosten: KostenZeile[] { importId, datum, kostenstelle, konto, kontoBezeichnung, betrag (signiert),
+│   │                           kostenart, zugeordnet, gemeinkosten, kostenartText, belegNr, buchungstext, kostentraeger, hash }
+│   ├── importe: ImportProtokoll[] { quelle, datei, importiertAm, profilName, zeilenGelesen, uebernommen,
+│   │                                uebersprungen, ersetzt, fehler[{zeile, text}], personenbezogen, von, bis, kostenstellen[], nichtZugeordneteKonten[] }
+│   └── schwellen: { gelb, rot } in %
 ├── kundeId?: Verknüpfung zum Adressbuch (optional, null = keine Zuordnung)
 ├── Stammfelder: nummer, bezeichnung, art (angebot|ausschreibung|auftrag), bauvorhaben, bauort, datum
 ├── auftraggeber: Adresse
@@ -114,7 +129,10 @@ Stammdaten
 ├── firma: Firma (Adresse + inhaber, bank, iban, bic, ustId, steuerNr)
 ├── geraete: GeraetStamm[] { bezeichnung, stundensatz }
 ├── material: MaterialStamm[] { bezeichnung, einheit, preis }
-└── einheiten: string[]
+├── einheiten: string[]
+├── importProfile?: ImportProfil[] { name, quelle (baulohn|fibu), zuordnung {zielfeld → Spaltenüberschrift},
+│                                    habenWerte, ausgeschlosseneStundenarten }
+└── kontenRegeln?: KontenRegel[] { vonKonto, bisKonto, kostenartText, kostenart, gemeinkosten, bezeichnung }
 ```
 
 **Adressbuch:** `Projekt.auftraggeber` bleibt eine Adresskopie, `kundeId` ist nur die Verknüpfung. Dadurch ändern spätere Adressänderungen keine bestehenden Projekte oder gestellten Rechnungen; die Übernahme erfolgt bewusst per Schaltfläche. `kundenAusProjekten` dedupliziert nach Name (ohne Groß-/Kleinschreibung) und PLZ.
@@ -233,6 +251,49 @@ Datenmodell: `Projekt.bauzeit?: Bauzeitenplan { start, stundenProTag, standardKr
 
 `components/Gantt.tsx` zeichnet den Plan als SVG (Monats-, KW- und Tagesleiste, Wochenend-/Feiertagsschraffur, Abhängigkeitspfeile). Die Druckfassung verwendet feste helle Farben und skaliert über `viewBox`.
 
+## 7c. Nachkalkulation (`src/lib/csv.ts`, `src/lib/brzImport.ts`, `src/lib/nachkalkulation.ts`)
+
+### Abgrenzung
+
+Es gibt **keine** Anbindung an BRZ Baulohn oder BRZ Finanzbuchhaltung (keine API, kein festes Dateiformat, keine Zertifizierung). Die Exportlayouts dieser Systeme sind nicht bekannt. Implementiert ist ein generischer, konfigurierbarer CSV-Import; die Feldzuordnung liegt in `ImportProfil` (Stammdaten). Sobald reale Beispielexporte vorliegen, lässt sich ein Standardprofil als Vorbelegung in `brzImport.ts` (Synonymlisten der `ZielFeld`-Definitionen bzw. ein vordefiniertes Profil) ergänzen.
+
+### CSV-Parser (`csv.ts`)
+
+`dekodieren(buf, kodierung)`: `TextDecoder('utf-8', {fatal: true})`, bei ungültigen Bytefolgen Rückfall auf `windows-1252`; BOM wird entfernt. `erkenneTrennzeichen` wertet die ersten 20 Zeilen aus (Zeichen mit konsistentester Spaltenzahl außerhalb von Anführungszeichen gewinnt; Kandidaten `; \t , |`). `csvZeilen` ist ein Zeichen-Automat nach RFC 4180 (Anführungszeichen, `""`, Zeilenumbrüche im Feld, CRLF/LF). `parseZahl` liest `1.234,56`, `1,234.56`, `12,5-`, `(12,50)` und Währungs-/Prozentzeichen; `parseDatum` liest `tt.mm.jjjj`, `tt.mm.jj`, `jjjj-mm-tt(Thh:mm)`, `tt/mm/jjjj`, `jjjjmmtt` mit Gültigkeitsprüfung. `csvErzeugen` schreibt Semikolon-CSV mit Dezimalkomma.
+
+### Import (`brzImport.ts`)
+
+- `BAULOHN_FELDER` / `FIBU_FELDER`: Zielfelder mit Pflichtkennzeichen und Synonymen; `vorschlagZuordnung(kopf, quelle)` ordnet Spaltenüberschriften zu (normalisiert, exakte Treffer vor Teilstring, jede Spalte nur einmal).
+- `importAusfuehren(tabelle, nachkalk, optionen)` ist eine reine Funktion: Zeilen lesen, Fehler mit Zeilennummer sammeln, Baulohn **aggregieren** (Schlüssel Datum|Kostenstelle|Stundenart|Kostenträger|Mitarbeiter – Mitarbeiterfelder nur bei `personenbezogen`), ausgeschlossene Stundenarten überspringen, FiBu-Vorzeichen (Haben-Kennzeichen → negativ, sonst Vorzeichen des Exports), Konten über `kontoZuordnen` den Kostenarten zuordnen (erste passende Regel; Bereich und/oder Textabgleich; ohne Treffer `sonstiges` mit `zugeordnet = false`).
+- **Duplikatschutz:** `zeilenHash` (FNV-1a über die fachlichen Felder). Modus `ergaenzen` überspringt bekannte Hashes; Modus `ersetzen` löscht zuvor importierte Zeilen derselben Quelle im Zeitraum × Kostenstellen der Datei (`geloeschteIds`) und übernimmt neu. Bei aggregierten Baulohn-Daten erkennt der Hash nur identische Summen; überlappende Exporte sind mit `ersetzen` zu laden (Doku für Anwender).
+- `importUebernehmen`, `importLoeschen(importId)` (entfernt genau die Zeilen des Imports), `kostenNeuZuordnen(regeln)`.
+- `standardKontenRegeln('skr03' | 'skr04')`: editierbarer Startsatz, bewusst grob und ohne Gewähr.
+
+### Rechenkern (`nachkalkulation.ts`)
+
+`nachkalkulation(projekt, { stichtag, hochrechnung })` → `NachkalkErgebnis`:
+
+```
+mengen             = mengenBisStichtag(projekt, stichtag)
+Soll je Position   = ektJeEinheit(pos, kalkLohn) × menge;  Soll-Stunden = Σ Lohnansatz.menge × menge
+leistung           = Σ round2(menge × effektiverEP)        (wie leistungKum einer Rechnung mit diesem Stichtag)
+leistungsgrad      = leistung / lvSummen.netto             (null bei 0)
+sollBgk            = erg.bgk × leistungsgrad
+Ist-Zeilen         = Kostenstellen des Projekts (leer = alle), datum ≤ stichtag
+istKosten[k]       = Σ betrag (nicht Gemeinkosten);  istBgk = Σ betrag (Gemeinkosten laut Regel oder Kostenstelle)
+Lohn-Ist           = FiBu-Lohnkonten > 0 ? FiBu : Export-Lohnkosten vorhanden ? Export : Stunden × kalkLohn ("geschaetzt")
+abweichung%        = (ist − soll) / soll × 100              (null bei soll = 0 → Ampel grau)
+mittellohnIst      = Lohnkosten / Stunden (nur bei echter Lohnkostenquelle)
+bgkSatzIst         = istBgk / istEkt;   zuschlagIst = (erloes − istEkt) / istEkt
+ergebnisIst        = erloes − istEkt − istBgk;  ergebnisSoll = erloes − sollEkt − sollBgk
+Hochrechnung trend = istGesamt / leistungsgrad;  restPlan = istGesamt + (Soll gesamt − Soll Stand)
+prognoseErgebnis   = nettoNachNachlass − prognoseKosten;  planErgebnis = nettoNachNachlass − herstellkosten
+```
+
+`planStundenBis(projekt, stichtag)` verteilt die Lohnstunden jedes Vorgangs aus `planen()` gleichmäßig auf seine Arbeitstage und summiert bis zum Stichtag. Der **Zeitverlauf** berechnet die obigen Größen je Monatsende (plus Stichtag) kumuliert. Der **Titelvergleich** nutzt Kostenstellen mit `titelId`; `aufwandFaktor = istStunden / sollStunden`. `erfahrungswerte()` skaliert Lohnansätze mit diesem Faktor (je Titel, sonst projektweit) und `erfahrungswerteAnwenden()` schreibt nur die übergebenen Einträge zurück (neues Projektobjekt). Division durch 0 ist überall durch `null`-Ergebnisse abgefangen.
+
+Datenschutz: Die View speichert Mitarbeiterfelder nur bei explizit gesetztem Schalter; das Protokoll trägt `personenbezogen`. Alles liegt im localStorage und in der Sicherungsdatei.
+
 ## 7a. GAEB-Schnittstelle (`src/lib/gaeb.ts`)
 
 Format: GAEB DA XML 3.2 (Namespace `http://www.gaeb.de/GAEB_DA_XML/DA{83|84}/3.2`).
@@ -269,7 +330,7 @@ Nicht abgebildet: Textergänzungen (`ComplTS`), Bieterfeld-Kennungen, Unterbesch
 
 Änderungen laufen über `updateProjekt(id, p => ({...p, …}))`; der Store erzeugt neue Objekte, React rendert differenziert. `useProjekt()` liefert das aktive Projekt und einen gebundenen Updater.
 
-Die Persistenz nutzt `zustand/middleware/persist` mit `partialize` und einer eigenen `merge`-Funktion, die in älteren Speicherständen das fehlende Feld `stammdaten.kunden` mit einer leeren Liste ergänzt; beim ersten Start wird das Beispielprojekt geladen. Eine Versionierung des Speicherformats ist über den Schlüssel `polier-v1` vorbereitet; Migrationen können über die `migrate`-Option von `persist` ergänzt werden.
+Die Persistenz nutzt `zustand/middleware/persist` mit `partialize` und einer eigenen `merge`-Funktion (`stammdatenErgaenzen`), die in älteren Speicherständen und Sicherungsdateien fehlende Felder ergänzt: `stammdaten.kunden` und `importProfile` leer, `kontenRegeln` mit dem SKR03-Vorschlag. `Projekt.nachkalk` und `Projekt.bauzeit` sind optional und werden erst beim ersten Bearbeiten angelegt (`nachkalkVon`, `bauzeitVon`); ältere Projekte bleiben unverändert gültig. Beim ersten Start wird das Beispielprojekt geladen. Eine Versionierung des Speicherformats ist über den Schlüssel `polier-v1` vorbereitet; Migrationen können über die `migrate`-Option von `persist` ergänzt werden.
 
 ### Sicherungsdatei
 
@@ -289,7 +350,7 @@ Das vollständige Schema steht in `docs/openapi.yaml` (OpenAPI 3.1, `components.
 
 ## 10. Tests
 
-`src/lib/__tests__/gaeb.test.ts` (jsdom-Umgebung) prüft Export-Struktur, Wohlgeformtheit, Roundtrip Export → Import und verschachtelte Titel. `src/lib/__tests__/calc.test.ts` prüft Formeln, Parser, Stationierung, Mittellohn, beide Kalkulationsmethoden inkl. Zielsummen-Modus, Mengen bis Stichtag, kumulative Verrechnung (AR 2 zieht AR 1 ab) und Snapshot-Verhalten. Ausführen mit `npm test`.
+`src/lib/__tests__/gaeb.test.ts` (jsdom-Umgebung) prüft Export-Struktur, Wohlgeformtheit, Roundtrip Export → Import und verschachtelte Titel. `src/lib/__tests__/calc.test.ts` prüft Formeln, Parser, Stationierung, Mittellohn, beide Kalkulationsmethoden inkl. Zielsummen-Modus, Mengen bis Stichtag, kumulative Verrechnung (AR 2 zieht AR 1 ab) und Snapshot-Verhalten. `csv.test.ts` prüft Trennzeichen, Anführungszeichen, BOM, Kodierung (UTF-8/Windows-1252), Zahlen- und Datumsformate; `brzImport.test.ts` Spaltenvorschlag, Pflichtfelder, Kontenregeln, Aggregation/Personenbezug, Soll/Haben-Vorzeichen, Duplikatschutz, Ersetzen und Löschen; `nachkalkulation.test.ts` Soll auf Leistungsstand, Abweichungen/Ampel, Hochrechnung, Bauzeit-Planstunden, Titelvergleich, Zeitverlauf, CSV, Randfälle (leeres Projekt, kein Leistungsstand, Lohnquellen) und Erfahrungswerte. Ausführen mit `npm test`.
 
 ## 11. Erweiterungsideen
 
@@ -300,4 +361,5 @@ Das vollständige Schema steht in `docs/openapi.yaml` (OpenAPI 3.1, `components.
 | Nachträge | Eigene Titel-Kennzeichnung "Nachtrag Nr." und getrennte Ausweisung in Rechnungen |
 | Mehrere Aufmaß-Schemata | Weiteren Katalog in `formulas.ts` (z. B. REB 23.004) |
 | Zahlungsplan / Mahnwesen | Fälligkeiten aus `rechnungen` ableiten |
+| BRZ-Standardprofile | Nach Erhalt echter Exportbeispiele vordefinierte `ImportProfil`e und ggf. Sonderfälle (Kopfzeilen, Summenzeilen, Festbreitenformat) in `brzImport.ts` ergänzen; direkte Schnittstelle/API ist nicht Teil der aktuellen Version |
 | PDF direkt | `@react-pdf/renderer` oder serverseitiges Rendering statt Browser-Druck |

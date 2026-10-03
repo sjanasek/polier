@@ -1,8 +1,9 @@
 import { useRef } from 'react';
 import { useStore } from '../store';
 import { Card, TextField, NumberInput, confirmDelete } from '../components/ui';
-import type { Firma, Stammdaten } from '../types';
+import { IMPORT_QUELLEN, KOSTENARTEN, KOSTENART_LISTE, type Firma, type Kostenart, type KontenRegel, type Stammdaten } from '../types';
 import { uid } from '../lib/format';
+import { felderFuer, neueKontenRegel, standardKontenRegeln } from '../lib/brzImport';
 
 export function StammdatenView() {
   const stammdaten = useStore(s => s.stammdaten);
@@ -32,6 +33,19 @@ export function StammdatenView() {
   };
 
   const f = stammdaten.firma;
+  const regeln = stammdaten.kontenRegeln ?? [];
+  const profile = stammdaten.importProfile ?? [];
+  const setRegel = (id: string, patch: Partial<KontenRegel>) => set(s => ({ ...s, kontenRegeln: (s.kontenRegeln ?? []).map(r => (r.id === id ? { ...r, ...patch } : r)) }));
+  const regelnLaden = (rahmen: 'skr03' | 'skr04') => {
+    if (regeln.length && !window.confirm(`Vorhandene ${regeln.length} Kontenregeln durch den ${rahmen.toUpperCase()}-Vorschlag ersetzen?`)) return;
+    set(s => ({ ...s, kontenRegeln: standardKontenRegeln(rahmen) }));
+  };
+  const regelVerschieben = (i: number, dir: -1 | 1) => set(s => {
+    const arr = [...(s.kontenRegeln ?? [])]; const j = i + dir;
+    if (j < 0 || j >= arr.length) return s;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    return { ...s, kontenRegeln: arr };
+  });
   return (
     <div className="cols">
       <div>
@@ -89,6 +103,61 @@ export function StammdatenView() {
               ))}
             </tbody>
           </table>
+        </Card>
+        <Card title="Kontenzuordnung für den FiBu-Import (Konto → Kostenart)" actions={
+          <>
+            <button className="btn secondary sm" onClick={() => regelnLaden('skr03')} title="Vorschlag nach SKR03, ohne Gewähr">SKR03-Vorschlag</button>
+            <button className="btn secondary sm" onClick={() => regelnLaden('skr04')} title="Vorschlag nach SKR04, ohne Gewähr">SKR04-Vorschlag</button>
+            <button className="btn sm" onClick={() => set(s => ({ ...s, kontenRegeln: [...(s.kontenRegeln ?? []), neueKontenRegel()] }))}>+ Regel</button>
+          </>
+        }>
+          <p className="muted">Regeln werden von oben nach unten geprüft, die erste passende gewinnt. Kontobereich (von/bis) und/oder Textabgleich mit der Kostenart-Spalte des Exports. Nicht zugeordnete Konten landen unter „Sonstiges“. Die Vorschläge nach SKR03/SKR04 sind Richtwerte ohne Gewähr – maßgeblich ist der eigene Kontenplan.</p>
+          {regeln.length === 0 && <div className="empty">Keine Regeln. Vorschlag laden oder Regel anlegen.</div>}
+          {regeln.length > 0 && (
+            <table className="tbl compact">
+              <thead><tr><th className="w-s">von Konto</th><th className="w-s">bis Konto</th><th>Kostenart-Text enthält</th><th>Kostenart</th><th title="Gemeinkosten (BGK)">BGK</th><th>Bezeichnung</th><th></th></tr></thead>
+              <tbody>
+                {regeln.map((r, i) => (
+                  <tr key={r.id}>
+                    <td><input value={r.vonKonto} onChange={e => setRegel(r.id, { vonKonto: e.target.value })} /></td>
+                    <td><input value={r.bisKonto} onChange={e => setRegel(r.id, { bisKonto: e.target.value })} /></td>
+                    <td><input value={r.kostenartText} placeholder="optional" onChange={e => setRegel(r.id, { kostenartText: e.target.value })} /></td>
+                    <td>
+                      <select value={r.kostenart} onChange={e => setRegel(r.id, { kostenart: e.target.value as Kostenart })}>
+                        {KOSTENART_LISTE.map(k => <option key={k} value={k}>{KOSTENARTEN[k]}</option>)}
+                      </select>
+                    </td>
+                    <td><input type="checkbox" checked={r.gemeinkosten} onChange={e => setRegel(r.id, { gemeinkosten: e.target.checked })} /></td>
+                    <td><input value={r.bezeichnung} onChange={e => setRegel(r.id, { bezeichnung: e.target.value })} /></td>
+                    <td>
+                      <div className="row" style={{ flexWrap: 'nowrap', gap: 2 }}>
+                        <button className="btn ghost sm" onClick={() => regelVerschieben(i, -1)}>↑</button>
+                        <button className="btn ghost sm" onClick={() => regelVerschieben(i, 1)}>↓</button>
+                        <button className="btn ghost sm" onClick={() => set(s => ({ ...s, kontenRegeln: (s.kontenRegeln ?? []).filter(x => x.id !== r.id) }))}>✕</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+        <Card title="Importprofile (Spaltenzuordnung Baulohn / FiBu)">
+          <p className="muted">Profile werden im Modul Nachkalkulation → Import angelegt und gespeichert. Hier zur Übersicht und zum Löschen.</p>
+          {profile.length === 0 ? <div className="empty">Noch kein Profil gespeichert.</div> : (
+            <table className="tbl compact">
+              <thead><tr><th>Name</th><th>Quelle</th><th>Zuordnung</th><th className="w-s"></th></tr></thead>
+              <tbody>
+                {profile.map(p => (
+                  <tr key={p.id}>
+                    <td>{p.name}</td><td>{IMPORT_QUELLEN[p.quelle]}</td>
+                    <td className="muted" style={{ fontSize: 11 }}>{felderFuer(p.quelle).filter(f => p.zuordnung[f.key]).map(f => `${f.label} ← ${p.zuordnung[f.key]}`).join(' · ')}</td>
+                    <td><button className="btn ghost sm" onClick={() => confirmDelete(`Profil „${p.name}“`) && set(s => ({ ...s, importProfile: (s.importProfile ?? []).filter(x => x.id !== p.id) }))}>✕</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </Card>
       </div>
     </div>

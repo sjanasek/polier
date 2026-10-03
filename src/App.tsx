@@ -9,6 +9,7 @@ import { BauzeitView } from './views/BauzeitView';
 import { AufmassView } from './views/AufmassView';
 import { StationierungView } from './views/StationierungView';
 import { RechnungenView } from './views/RechnungenView';
+import { NachkalkView } from './views/NachkalkView';
 import { DruckView } from './views/DruckView';
 import { StammdatenView } from './views/StammdatenView';
 import { PROJEKT_ARTEN } from './types';
@@ -22,6 +23,7 @@ const NAV: { view: View; label: string; ico: string; needsProjekt?: boolean }[] 
   { view: 'aufmass', label: 'Aufmaß', ico: '∠', needsProjekt: true },
   { view: 'stationierung', label: 'Stationierung', ico: '⟷', needsProjekt: true },
   { view: 'rechnungen', label: 'Rechnungen', ico: '€', needsProjekt: true },
+  { view: 'nachkalk', label: 'Nachkalkulation', ico: '⇄', needsProjekt: true },
   { view: 'druck', label: 'Drucken / Ausgabe', ico: '▤', needsProjekt: true },
 ];
 
@@ -34,6 +36,7 @@ const TITEL: Record<View, string> = {
   aufmass: 'Aufmaß nach VOB/C (REB-Formeln)',
   stationierung: 'Stationierungsaufmaß (Tiefbau)',
   rechnungen: 'Rechnungen – kumulative Abrechnung',
+  nachkalk: 'Nachkalkulation – Soll-Ist-Vergleich',
   druck: 'Drucken / Ausgabe',
   stammdaten: 'Stammdaten & Einstellungen',
 };
@@ -79,6 +82,7 @@ export default function App() {
       case 'aufmass': return <AufmassView />;
       case 'stationierung': return <StationierungView />;
       case 'rechnungen': return <RechnungenView />;
+      case 'nachkalk': return <NachkalkView />;
       case 'druck': return <DruckView />;
     }
     return null;

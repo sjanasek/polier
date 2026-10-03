@@ -4,6 +4,8 @@ import { uid } from './format';
 import type { Kunde } from '../types';
 import { kundeAdresse } from './kunden';
 import { bundesFeiertage, standardBauzeit, vorgaengeAusLV } from './bauzeit';
+import { zeilenHash } from './brzImport';
+import type { ImportProtokoll, KostenZeile, Kostenart, Nachkalkulation, StundenZeile } from '../types';
 
 export const DEMO_KUNDE_ID = 'kunde-demo-stadt';
 
@@ -153,5 +155,70 @@ export function demoProjekt(): Projekt {
   bz.vorgaenge = vorgaengeAusLV(p.lv, 'titel', true);
   if (bz.vorgaenge[2]) bz.vorgaenge[2].verzug = -3; // Straßenbau beginnt, während der Kanal noch fertiggestellt wird
   p.bauzeit = bz;
+  p.nachkalk = demoNachkalk(p.lv.map(t => t.id));
   return p;
+}
+
+/**
+ * Beispiel-Importe für die Nachkalkulation: anonym, nur aggregiert (keine Mitarbeiterdaten),
+ * ausdrücklich als Beispiel gekennzeichnet. Kostenstellen 4711 (Projekt) mit Unterkostenstellen je Titel.
+ */
+export function demoNachkalk(titelIds: string[]): Nachkalkulation {
+  const impStd = 'import-demo-baulohn', impKo = 'import-demo-fibu';
+  const std = (datum: string, kostenstelle: string, stunden: number, stundenart = 'Normalstunden', satz = 47.8): StundenZeile => ({
+    id: uid(), importId: impStd, datum, kostenstelle, stundenart, stunden, lohnkosten: Math.round(stunden * satz * 100) / 100,
+    mitarbeiterNr: '', mitarbeiterName: '', kostentraeger: '', hash: zeilenHash([datum, kostenstelle, stundenart, '', '', stunden, Math.round(stunden * satz * 100) / 100]),
+  });
+  const ko = (datum: string, kostenstelle: string, konto: string, kontoBezeichnung: string, betrag: number, kostenart: Kostenart, buchungstext: string, belegNr: string, gemeinkosten = false, zugeordnet = true): KostenZeile => ({
+    id: uid(), importId: impKo, datum, kostenstelle, konto, kontoBezeichnung, betrag, kostenart, zugeordnet, gemeinkosten, kostenartText: '',
+    belegNr, buchungstext, kostentraeger: '', hash: zeilenHash([datum, kostenstelle, konto, betrag, belegNr, buchungstext, '']),
+  });
+  const stunden: StundenZeile[] = [
+    std('2026-08-07', '4711-90', 16, 'Normalstunden'),
+    std('2026-08-07', '4711-01', 32), std('2026-08-14', '4711-01', 28), std('2026-08-21', '4711-01', 8),
+    std('2026-08-14', '4711-01', 4, 'Überstunden', 60),
+    std('2026-08-21', '4711-02', 40), std('2026-08-28', '4711-02', 72), std('2026-09-04', '4711-02', 60), std('2026-09-11', '4711-02', 48), std('2026-09-18', '4711-02', 42),
+    std('2026-08-28', '4711-02', 6, 'Überstunden', 60), std('2026-09-11', '4711-02', 5, 'Überstunden', 60),
+    std('2026-09-18', '4711-03', 24), std('2026-09-25', '4711-03', 64), std('2026-09-30', '4711-03', 40),
+    std('2026-09-25', '4711-03', 4, 'Überstunden', 60),
+  ];
+  const kosten: KostenZeile[] = [
+    ko('2026-08-05', '4711-90', '4210', 'Miete Container / Baustelleneinrichtung', 1200, 'sonstiges', 'Beispiel: Containermiete August', 'ER-2026-0811', true),
+    ko('2026-09-05', '4711-90', '4210', 'Miete Container / Baustelleneinrichtung', 1200, 'sonstiges', 'Beispiel: Containermiete September', 'ER-2026-0902', true),
+    ko('2026-09-30', '4711-90', '4240', 'Baustrom / Bauwasser', 420, 'sonstiges', 'Beispiel: Baustrom Abschlag', 'ER-2026-0988', true),
+    ko('2026-08-20', '4711-02', '3000', 'Roh-, Hilfs- und Betriebsstoffe', 4300, 'stoffe', 'Beispiel: KG-Rohr DN 200, 180 m', 'ER-2026-0825'),
+    ko('2026-08-25', '4711-02', '3000', 'Roh-, Hilfs- und Betriebsstoffe', 1350, 'stoffe', 'Beispiel: Bettungssand 0/2', 'ER-2026-0831'),
+    ko('2026-08-27', '4711-02', '3000', 'Roh-, Hilfs- und Betriebsstoffe', 5520, 'stoffe', 'Beispiel: Schachtfertigteile 4 St', 'ER-2026-0834'),
+    ko('2026-09-02', '4711-02', '3000', 'Roh-, Hilfs- und Betriebsstoffe', -240, 'stoffe', 'Beispiel: Gutschrift Rücknahme Formstücke', 'GS-2026-0012'),
+    ko('2026-08-28', '4711-01', '3990', 'Entsorgung / Deponie', 2700, 'sonstiges', 'Beispiel: Deponiegebühren Z0', 'ER-2026-0840'),
+    ko('2026-08-31', '4711', '4810', 'Mietgeräte', 3950, 'geraete', 'Beispiel: Bagger 14 t Miete August', 'ER-2026-0850'),
+    ko('2026-09-30', '4711', '4810', 'Mietgeräte', 4100, 'geraete', 'Beispiel: Bagger 14 t Miete September', 'ER-2026-0990'),
+    ko('2026-08-31', '4711', '4530', 'Laufende Kfz-Betriebskosten', 1250, 'geraete', 'Beispiel: LKW August', 'ER-2026-0851'),
+    ko('2026-09-30', '4711', '4530', 'Laufende Kfz-Betriebskosten', 680, 'geraete', 'Beispiel: LKW September', 'ER-2026-0991'),
+    ko('2026-09-10', '4711', '3100', 'Fremdleistungen', 850, 'fremd', 'Beispiel: NU Vermessung Achse A', 'ER-2026-0905'),
+    ko('2026-09-15', '4711-03', '3000', 'Roh-, Hilfs- und Betriebsstoffe', 7900, 'stoffe', 'Beispiel: Schotter 0/32, 545 t', 'ER-2026-0940'),
+    ko('2026-09-22', '4711-03', '3000', 'Roh-, Hilfs- und Betriebsstoffe', 1680, 'stoffe', 'Beispiel: Betonbordsteine 15/30', 'ER-2026-0955'),
+    ko('2026-09-23', '4711-03', '3000', 'Roh-, Hilfs- und Betriebsstoffe', 1560, 'stoffe', 'Beispiel: Beton C12/15', 'ER-2026-0956'),
+    ko('2026-09-18', '4711', '2300', 'Sonstige Aufwendungen', 180, 'sonstiges', 'Beispiel: Konto ohne Regel', 'ER-2026-0944', false, false),
+  ];
+  const protokoll = (id: string, quelle: 'baulohn' | 'fibu', datei: string, anzahl: number, ksts: string[], von: string, bis: string, unbekannt: string[]): ImportProtokoll => ({
+    id, quelle, datei, importiertAm: '2026-10-01T08:00:00.000Z', profilName: 'Beispielprofil', zeilenGelesen: anzahl, uebernommen: anzahl, uebersprungen: 0, ersetzt: 0,
+    fehler: [], personenbezogen: false, von, bis, kostenstellen: ksts, nichtZugeordneteKonten: unbekannt,
+  });
+  return {
+    kostenstellen: [
+      { id: uid(), nummer: '4711', bezeichnung: 'Erschließung Am Lindenhof (Hauptkostenstelle)', titelId: null, gemeinkosten: false },
+      { id: uid(), nummer: '4711-01', bezeichnung: 'Erdarbeiten', titelId: titelIds[0] ?? null, gemeinkosten: false },
+      { id: uid(), nummer: '4711-02', bezeichnung: 'Kanalbau', titelId: titelIds[1] ?? null, gemeinkosten: false },
+      { id: uid(), nummer: '4711-03', bezeichnung: 'Straßenbau', titelId: titelIds[2] ?? null, gemeinkosten: false },
+      { id: uid(), nummer: '4711-90', bezeichnung: 'Baustelleneinrichtung (Gemeinkosten)', titelId: null, gemeinkosten: true },
+    ],
+    stunden,
+    kosten,
+    importe: [
+      protokoll(impStd, 'baulohn', 'BEISPIEL-baulohn-stunden-2026-08-09.csv (Beispieldaten, kein echter Export)', stunden.length, ['4711-01', '4711-02', '4711-03', '4711-90'], '2026-08-07', '2026-09-30', []),
+      protokoll(impKo, 'fibu', 'BEISPIEL-fibu-buchungen-2026-08-09.csv (Beispieldaten, kein echter Export)', kosten.length, ['4711', '4711-01', '4711-02', '4711-03', '4711-90'], '2026-08-05', '2026-09-30', ['2300']),
+    ],
+    schwellen: { gelb: 5, rot: 15 },
+  };
 }
