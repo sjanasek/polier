@@ -57,6 +57,29 @@ Links befindet sich die **Navigation** mit allen Modulen. Unten links wird das *
 | Drucken / Ausgabe | LV, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt, Bauzeitenplan, Nachkalkulation als PDF |
 | Stammdaten | Eigene Firma, Geräte- und Materialpreise, Kontenzuordnung, Importprofile, Datensicherung |
 
+### App installieren und offline nutzen (PWA)
+
+Polier lässt sich wie eine App auf dem Startbildschirm oder Desktop ablegen. Sie startet dann ohne Browserleiste in einem eigenen Fenster, auch ohne Netz. Voraussetzung ist die Nutzung der veröffentlichten Version über **HTTPS**; aus dem Entwicklungsserver heraus ist keine Installation vorgesehen.
+
+| Gerät | So geht es |
+|---|---|
+| iPhone, iPad | In **Safari** das Teilen-Symbol antippen, dann „Zum Home-Bildschirm“, dann „Hinzufügen“. Andere Browser auf iOS bieten das nicht an. |
+| Android (Chrome) | Browsermenü, „App installieren“ bzw. „Zum Startbildschirm hinzufügen“. |
+| Windows, Mac (Chrome, Edge) | Symbol zum Installieren in der Adressleiste oder im Browsermenü „App installieren“. |
+
+Unter **Stammdaten → App installieren und Offline-Betrieb** sehen Sie, ob die App installiert und offline startbar ist. Dort steht auch ein Knopf „App installieren“, sobald der Browser die Installation anbietet, sowie „Auf Updates prüfen“.
+
+**Offline-Betrieb:** Nach dem ersten Laden sind alle Programmdateien auf dem Gerät gespeichert. Ohne Netz zeigt die Kopfleiste die Marke „Offline“, alle Funktionen arbeiten mit den lokalen Daten. Nur das Laden einer neuen Programmversion braucht Netz.
+
+**Neue Versionen:** Gibt es eine neue Version, erscheint unten ein Hinweis „Neue Version verfügbar“. Mit „Jetzt aktualisieren“ wird sie aktiviert und die Seite einmal neu geladen. Ihre Daten bleiben erhalten. Wer „Später“ wählt, arbeitet bis zum nächsten Start mit der alten Version weiter. Die App prüft beim Zurückkehren in den Vordergrund selbstständig auf Updates.
+
+**Wichtig für Ihre Daten**
+
+- Die Daten liegen weiterhin nur auf diesem Gerät. Eine Installation synchronisiert nichts zwischen Geräten.
+- **iPhone und iPad:** Die zum Home-Bildschirm hinzugefügte App hat einen **eigenen Datenspeicher, getrennt von Safari**. Haben Sie bereits in Safari gearbeitet, exportieren Sie dort unter Stammdaten eine Sicherung, installieren die App und importieren die Sicherung in der App.
+- Safari löscht Website-Daten, wenn die Seite lange nicht genutzt wurde. Als installierte App ist dieses automatische Aufräumen nicht vorgesehen. Eine regelmäßige Sicherung bleibt trotzdem sinnvoll.
+- Chrome und Edge nutzen für die installierte App denselben Datenspeicher wie für die Webseite.
+
 ### Seitenleiste ein- und ausklappen
 
 Mit dem Pfeil-Knopf oben in der Seitenleiste (« bzw. ») lässt sich die Navigation zu einer schmalen Symbolleiste einklappen. So bleibt mehr Platz für Tabellen und Balkenplan, besonders auf dem iPad. In der schmalen Leiste zeigt das Antippen oder Überfahren eines Symbols den Namen des Moduls; unten wechselt ein Knopf die Darstellung (Hell, Dunkel, Auto). Der Zustand wird im Browser gemerkt. Auf schmalen Bildschirmen (unter 900 Pixel Breite) startet die Leiste beim ersten Mal eingeklappt.

@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { Card, TextField, NumberInput, confirmDelete } from '../components/ui';
 import { IMPORT_QUELLEN, KOSTENARTEN, KOSTENART_LISTE, type Firma, type Kostenart, type KontenRegel, type Stammdaten } from '../types';
 import { uid } from '../lib/format';
+import { PwaKarte } from '../components/PwaBausteine';
 import { felderFuer, neueKontenRegel, standardKontenRegeln } from '../lib/brzImport';
 
 export function StammdatenView() {
@@ -65,6 +66,7 @@ export function StammdatenView() {
             <TextField label="Steuer-Nr." value={f.steuerNr} onChange={v => setFirma({ steuerNr: v })} />
           </div>
         </Card>
+        <PwaKarte />
         <Card title="Datensicherung">
           <p className="muted">Alle Daten liegen lokal in diesem Browser. Regelmäßig als JSON-Datei sichern.</p>
           <div className="row">

@@ -13,6 +13,7 @@ import { NachkalkView } from './views/NachkalkView';
 import { DruckView } from './views/DruckView';
 import { StammdatenView } from './views/StammdatenView';
 import { PROJEKT_ARTEN } from './types';
+import { OfflineMarke, UpdateHinweis } from './components/PwaBausteine';
 
 const NAV: { view: View; label: string; ico: string; needsProjekt?: boolean }[] = [
   { view: 'projekte', label: 'Projekte', ico: '▦' },
@@ -134,12 +135,14 @@ export default function App() {
       <main className="main">
         <div className="topbar">
           <h1>{TITEL[view]}</h1>
+          <OfflineMarke />
           {projekt && <span className="muted">{projekt.bauvorhaben || projekt.bezeichnung}</span>}
         </div>
         <div className="content">
           {renderBody()}
         </div>
       </main>
+      <UpdateHinweis />
     </div>
   );
 }

@@ -22,9 +22,14 @@
   <FilesMatch "\.(js|css)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
+  # Service worker and manifest must never be cached for long, otherwise updates never arrive
+  <FilesMatch "^(sw\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
 </IfModule>
 
 <IfModule mod_mime.c>
   AddType application/javascript .js
   AddType text/css .css
+  AddType application/manifest+json .webmanifest
 </IfModule>

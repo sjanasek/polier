@@ -30,7 +30,7 @@ npm run build        # Produktions-Build nach dist/
 | Drucken | LV ohne Preise, Angebot, Rechnung, Aufmaßblätter, Kalkulationsblatt, Bauzeitenplan, Nachkalkulation als PDF über den Browser |
 | GAEB | Export als GAEB DA XML 3.2 X83 (Ausschreibung) und X84 (Angebot), Import von X81–X86 ins LV |
 
-Hell- und Dunkelmodus (umschaltbar, optional automatisch nach Systemeinstellung).
+Hell- und Dunkelmodus (umschaltbar, optional automatisch nach Systemeinstellung). Als **PWA** installierbar (iPad, iPhone, Android, Desktop) und offline nutzbar.
 
 Hinweis zur Nachkalkulation: Es gibt keine direkte Anbindung an BRZ Baulohn / BRZ Finanzbuchhaltung und keine Zertifizierung. Der Import liest generische CSV-Exporte; die Spaltenzuordnung wird einmal eingestellt und als Profil gespeichert. Beispieldateien zum Testen: `docs/beispiel-baulohn-stunden.csv`, `docs/beispiel-fibu-buchungen.csv`.
 

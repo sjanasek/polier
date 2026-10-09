@@ -24,6 +24,10 @@ polier/
 ├── package.json                Skripte: dev, build, preview, test
 ├── vite.config.ts
 ├── tsconfig.json
+├── pwa/
+│   ├── sw.template.js          Vorlage des Service Workers
+│   └── swPlugin.ts             Vite-Plugin: erzeugt dist/sw.js mit Dateiliste und Version
+├── public/                     manifest.webmanifest, Symbole, icon.svg, .htaccess (werden nach dist/ kopiert)
 ├── docs/
 │   ├── anwenderhandbuch.md
 │   ├── technische-dokumentation.md
@@ -42,6 +46,7 @@ polier/
     │   ├── calc.ts             Rechenkern: Kalkulation, LV-Summen, Aufmaß, Rechnungen
     │   ├── formulas.ts         REB-Formelkatalog + Parser für freie Formeln
     │   ├── station.ts          Stationierung (Mittelwertverfahren)
+│   ├── pwa.ts              Service-Worker-Registrierung, Update-Status, Installationshilfe, Online-Status
 │   ├── theme.ts            Hell-/Dunkelmodus (hell, dunkel, auto)
 │   ├── bauzeit.ts          Bauzeitenplan: Zeitaufwand aus Kalkulation, Terminrechnung, Kalender
 │   ├── kunden.ts           Adressbuch-Logik (Kundennummern, Adresskopie, Kunden aus Projekten)
@@ -236,6 +241,27 @@ Der Abzug der Vorrechnungen erfolgt mit deren **Rechnungsbeträgen**, nicht mit 
 | `volumenBT` | wert × wert2 | (Q1 + Q2)/2 × Δl |
 
 `stationierungSumme(s)` = Σ Abschnitte × faktor × Vorzeichen. Stationen werden als Meter gespeichert; `stationFmt`/`stationParse` wandeln von/nach `km+m` (z. B. `0+125,50`).
+
+## 7d. Progressive Web App (PWA)
+
+**Bausteine:** `public/manifest.webmanifest` (Name, Farben, `display: standalone`, relative `start_url`/`scope`, Symbole 192/512 sowie maskable), Symbole unter `public/icons/` und `public/icon.svg`, Meta-Tags in `index.html` (Theme-Farben hell/dunkel, iOS-Startbildschirm: `apple-touch-icon`, `apple-mobile-web-app-*`). Die Vite-Option `base: './'` erzeugt relative Pfade, die App läuft daher an der Wurzel einer Domain ebenso wie in einem Unterordner.
+
+**Service Worker:** Quelle ist `pwa/sw.template.js`. Das Plugin `polierServiceWorker` (`pwa/swPlugin.ts`) schreibt nach dem Build `dist/sw.js` und setzt zwei Platzhalter ein: die Liste aller Build-Dateien (ohne `sw.js` und `.htaccess`) und eine Versionskennung, den SHA-256-Hash über Dateinamen und Inhalte (12 Zeichen). Jede Änderung an irgendeiner Datei ergibt damit einen neuen Cache-Namen `polier-<Version>`. Es kommt keine zusätzliche Bibliothek zum Einsatz.
+
+- `install`: lädt alle Dateien der Liste in den neuen Cache (Precache, `cache: 'reload'`).
+- `activate`: löscht alte `polier-*`-Caches und übernimmt die offenen Seiten (`clients.claim`).
+- `fetch`: nur GET-Anfragen derselben Herkunft. Seitenaufrufe (`mode: navigate`) liefern `index.html` aus dem Cache (App-Shell), alles andere zuerst aus dem Cache, sonst Netzwerk mit Ablage im Cache. Fremde Domains werden nicht angefasst.
+- Nachricht `SKIP_WAITING` aktiviert eine wartende neue Version. Sie wird **nicht** automatisch aktiviert, damit offene Eingaben nicht durch ein Neuladen unterbrochen werden.
+
+Der Service Worker wird nur im Produktions-Build registriert (`import.meta.env.PROD`), der Dev-Server bleibt davon unberührt.
+
+**Client (`src/lib/pwa.ts`):** kleiner Store mit `useSyncExternalStore`. Status: `offlineBereit`, `updateVerfuegbar`, `online`, `installiert` (`display-mode: standalone` bzw. `navigator.standalone`), `installierbar` (Ereignis `beforeinstallprompt`), `speicherDauerhaft` (`navigator.storage.persist()`). Update-Ablauf: `updatefound` → Status `installed` bei vorhandenem Controller → Hinweisleiste (`UpdateHinweis`) → `aktualisieren()` sendet `SKIP_WAITING`, nach `controllerchange` einmal `location.reload()`, aber nur nach ausdrücklicher Bestätigung. Eine Prüfung auf Updates erfolgt beim Zurückkehren in den Vordergrund, höchstens alle 10 Minuten. Die Oberfläche steckt in `components/PwaBausteine.tsx` (Hinweisleiste, Offline-Marke, Karte in den Stammdaten).
+
+**Hosting-Anforderungen:** Service Worker laufen nur in einem sicheren Kontext (HTTPS oder `localhost`). `sw.js` und `manifest.webmanifest` dürfen nicht lange gecacht werden, sonst kommen Updates nie an; die mitgelieferte `.htaccess` setzt dafür `Cache-Control: no-cache` und den MIME-Typ `application/manifest+json`. Auf anderen Servern entsprechend konfigurieren.
+
+**Datenhaltung:** Die Projektdaten bleiben im `localStorage` und sind vom Cache getrennt; ein Update des Service Workers verändert sie nicht. Unter iOS hat eine zum Home-Bildschirm hinzugefügte Web-App einen eigenen Speicher, getrennt von Safari; ein Umzug geschieht über Sicherung (Export/Import).
+
+**Tests:** `pwa/__tests__/swPlugin.test.ts` (Platzhalter, Dateiliste, Versionshash, Pfadnormalisierung, gültiges JavaScript) und `src/lib/__tests__/pwa.test.ts` (iOS-Erkennung). Zusätzlich wurde der Ablauf im Headless-Browser geprüft: Installierbarkeit laut Chrome-Protokoll ohne Fehler, Offline-Neustart mit Daten, Update-Hinweis, Aktivierung und Aufräumen des alten Caches.
 
 ## 7b. Bauzeitenplan (`src/lib/bauzeit.ts`)
 
